@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/elazarl/goproxy"
 	flag "github.com/ogier/pflag"
 )
 
@@ -21,8 +20,6 @@ var listenAddr = flag.StringP("listen", "l", "127.0.0.1:5000", "What address to 
 var gotifyAddr = flag.String("gotify", "", "What address is gotify on")
 var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
 var verbose = flag.BoolP("verbose", "v", false, "log all requests")
-
-var proxy *goproxy.ProxyHttpServer
 
 func init() {
 	flag.Parse()
