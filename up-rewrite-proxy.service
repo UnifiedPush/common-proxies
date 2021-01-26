@@ -1,0 +1,11 @@
+[Unit]
+Description=Rewrite Proxy for some UnifiedPush providers in Go
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/up-rewrite-proxy --fcm="<INSERT FCM KEY HERE>" -l127.0.0.1:5000 --gotify="<GOTIFY ADDRESS example localhost:8000"
+
+
+[Install]
+WantedBy=multi-user.target
