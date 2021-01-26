@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,7 +18,7 @@ import (
 )
 
 var listenAddr = flag.StringP("listen", "l", "127.0.0.1:5000", "What address to listen on")
-var gotifyAddr = flag.String("gotify", "127.0.0.1:8000", "What address is gotify on")
+var gotifyAddr = flag.String("gotify", "", "What address is gotify on")
 var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
 var verbose = flag.BoolP("verbose", "v", false, "log all requests")
 
@@ -28,7 +30,9 @@ func init() {
 func main() {
 	myRouter := http.NewServeMux()
 	for _, i := range handlers {
-		myRouter.HandleFunc(i.path, handle(i.action))
+		if len(*i.variable) > 0 {
+			myRouter.HandleFunc(i.path, handle(i.action))
+		}
 	}
 	myRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -47,7 +51,6 @@ func main() {
 	go func() {
 		<-quit
 		log.Println("Server is shutting down...")
-		//	atomic.StoreInt32(&healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -60,7 +63,6 @@ func main() {
 	}()
 
 	log.Println("Server is ready to handle requests at", *listenAddr)
-	//	atomic.StoreInt32(&healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Could not listen on %s: %v\n", *listenAddr, err)
 	}
@@ -70,25 +72,32 @@ func main() {
 
 }
 
-func handle(f func(http.Request) (*http.Request, error)) func(http.ResponseWriter, *http.Request) {
+//function that runs on (almost) every http request
+func handle(translate func([]byte, http.Request) (*http.Request, error)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 
-		req, err := f(*r)
+		body := make([]byte, 1024*100) //read limited chunk of request body
+		io.ReadFull(r.Body, body)
+		body = bytes.Trim(body, "\x00")
+
+		req, err := translate(body, *r)
 		if errHandle(err, w) {
 			return
 		}
 
-		client := http.Client{}
+		client := http.Client{} //actually process the translated request
 		resp, err := client.Do(req)
 		if errHandle(err, w) {
 			return
 		}
+		defer resp.Body.Close()
 
+		//copy reply into new request
 		for i, j := range resp.Header {
 			w.Header()[i] = j
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err = ioutil.ReadAll(resp.Body)
 		if errHandle(err, w) {
 			return
 		}
@@ -104,25 +113,37 @@ func handle(f func(http.Request) (*http.Request, error)) func(http.ResponseWrite
 }
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
-		if *verbose {
-			log.Println("panic")
-			log.Println(e)
+		if e.Error() == "length" {
+			if *verbose {
+				log.Println("Too long request")
+			}
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+			w.Write([]byte("Request is too long\n"))
+			return true
+
+		} else {
+			if *verbose {
+				log.Println("panic")
+				log.Println(e)
+			}
+			w.WriteHeader(http.StatusBadGateway)
+			return true
 		}
-		w.WriteHeader(http.StatusBadGateway)
-		return true
 	}
 	return false
 }
 
+// various translaters
 var handlers = []struct {
 	path     string
-	action   func(http.Request) (*http.Request, error)
+	action   func([]byte, http.Request) (*http.Request, error)
 	variable *string
 }{
 	{"/UP", gotify, gotifyAddr},
 	{"/FCM", fcm, fcmServerKey},
 }
 
+//gotify
 var gotifyRegex = []*regexp.Regexp{
 	regexp.MustCompile("\\\\"),
 	regexp.MustCompile(`"`),
@@ -130,13 +151,12 @@ var gotifyRegex = []*regexp.Regexp{
 	regexp.MustCompile(`$`),
 }
 
-func gotify(req http.Request) (newReq *http.Request, err error) {
+func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
 
 	req.URL.Scheme = "http"
 	req.URL.Host = *gotifyAddr
 	req.URL.Path = "/message"
 
-	body, _ := ioutil.ReadAll(req.Body)
 	body = gotifyRegex[0].ReplaceAll(body, []byte("\\\\"))
 	body = gotifyRegex[1].ReplaceAll(body, []byte(`\"`))
 	body = gotifyRegex[2].ReplaceAll(body, []byte(`{"message":"`))
@@ -153,6 +173,7 @@ func gotify(req http.Request) (newReq *http.Request, err error) {
 	return
 }
 
+//fcm
 var fcmRegex = []*regexp.Regexp{
 	regexp.MustCompile("\\\\"),
 	regexp.MustCompile(`"`),
@@ -160,10 +181,12 @@ var fcmRegex = []*regexp.Regexp{
 	regexp.MustCompile(`$`),
 }
 
-func fcm(req http.Request) (newReq *http.Request, err error) {
+func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
 	token := req.URL.Query().Get("token")
 
-	body, _ := ioutil.ReadAll(req.Body)
+	if len(body) > 1024*4-4 {
+		return nil, errors.New("length")
+	}
 	body = fcmRegex[0].ReplaceAll(body, []byte("\\\\"))
 	body = fcmRegex[1].ReplaceAll(body, []byte(`\\"`))
 	body = fcmRegex[2].ReplaceAll(body, []byte(`{"to":"`+token+`","data":{"body":"`))
@@ -177,8 +200,16 @@ func fcm(req http.Request) (newReq *http.Request, err error) {
 
 	newReq.Header.Set("Content-Type", "application/json")
 	newReq.Header.Set("Authorization", "key="+*fcmServerKey)
-	newReq.Header.Set("Host", "fcm.googleapis.com")
-	log.Println(newReq.Header.Get("Host"))
 
+	return
+}
+
+// utilities
+func min(i, j int) (k int) {
+	if i < j {
+		k = i
+	} else {
+		k = j
+	}
 	return
 }
