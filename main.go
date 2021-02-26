@@ -142,10 +142,13 @@ var handlers = []struct {
 
 //gotify
 var gotifyRegex = []*regexp.Regexp{
-	regexp.MustCompile("\\\\"),
+	regexp.MustCompile("\\"),
 	regexp.MustCompile(`"`),
 	regexp.MustCompile(`^`),
 	regexp.MustCompile(`$`),
+	regexp.MustCompile(`\r`),
+	regexp.MustCompile(`\n`),
+
 }
 
 func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
@@ -158,6 +161,8 @@ func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
 	body = gotifyRegex[1].ReplaceAll(body, []byte(`\"`))
 	body = gotifyRegex[2].ReplaceAll(body, []byte(`{"message":"`))
 	body = gotifyRegex[3].ReplaceAll(body, []byte(`"}`))
+	body = gotifyRegex[4].ReplaceAll(body, []byte(`\\r`))
+	body = gotifyRegex[5].ReplaceAll(body, []byte(`\\n`))
 
 	newReq, err = http.NewRequest(req.Method, req.URL.String(), bytes.NewReader(body))
 
