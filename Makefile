@@ -1,5 +1,5 @@
 docker:
-	docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
+	docker run --rm -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
 all:
 	./go-build-all.sh	
 	install -d bin

@@ -21,16 +21,16 @@ var listenAddr = flag.StringP("listen", "l", "127.0.0.1:5000", "What address to 
 var verbose = flag.BoolP("verbose", "v", false, "log all requests")
 
 var gotifyAddr = flag.String("gotify", "", "What hostname:port is gotify on")
-var gotifySecure = flag.BoolP("gotifySecure", "s", true, "https to gotify when set when true")
-var gotifyScheme = "http"
+var gotifyInsecure = flag.BoolP("gotifyInsecure", "s", true, "http not https to gotify when set when true")
+var gotifyScheme = "https"
 
 var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
 
 func init() {
 	flag.Parse()
 
-	if *gotifySecure {
-		gotifyScheme = "https"
+	if *gotifyInsecure {
+		gotifyScheme = "http"
 	}
 }
 func main() {
