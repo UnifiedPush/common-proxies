@@ -3,26 +3,35 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
 	"time"
 
 	flag "github.com/ogier/pflag"
 )
 
 var listenAddr = flag.StringP("listen", "l", "127.0.0.1:5000", "What address to listen on")
-var gotifyAddr = flag.String("gotify", "", "What address is gotify on")
-var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
 var verbose = flag.BoolP("verbose", "v", false, "log all requests")
+
+var gotifyAddr = flag.String("gotify", "", "What hostname:port is gotify on")
+var gotifySecure = flag.BoolP("gotifySecure", "s", true, "https to gotify when set when true")
+var gotifyScheme = "http"
+
+var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
 
 func init() {
 	flag.Parse()
+
+	if *gotifySecure {
+		gotifyScheme = "https"
+	}
 }
 func main() {
 	myRouter := http.NewServeMux()
@@ -140,47 +149,32 @@ var handlers = []struct {
 	{"/FCM", fcm, fcmServerKey},
 }
 
-//gotify
-var gotifyRegex = []*regexp.Regexp{
-	regexp.MustCompile("\\"),
-	regexp.MustCompile(`"`),
-	regexp.MustCompile(`^`),
-	regexp.MustCompile(`$`),
-	regexp.MustCompile(`\r`),
-	regexp.MustCompile(`\n`),
-
-}
-
 func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
 
-	req.URL.Scheme = "http"
+	req.URL.Scheme = gotifyScheme
 	req.URL.Host = *gotifyAddr
 	req.URL.Path = "/message"
 
-	body = gotifyRegex[0].ReplaceAll(body, []byte("\\\\"))
-	body = gotifyRegex[1].ReplaceAll(body, []byte(`\"`))
-	body = gotifyRegex[2].ReplaceAll(body, []byte(`{"message":"`))
-	body = gotifyRegex[3].ReplaceAll(body, []byte(`"}`))
-	body = gotifyRegex[4].ReplaceAll(body, []byte(`\\r`))
-	body = gotifyRegex[5].ReplaceAll(body, []byte(`\\n`))
-
-	newReq, err = http.NewRequest(req.Method, req.URL.String(), bytes.NewReader(body))
-
-	for n, h := range req.Header {
-		newReq.Header[n] = h
+	newBody, err := parseJson(struct {
+		Message string `json:"message"`
+	}{
+		Message: string(body),
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
+	newReq, err = http.NewRequest(req.Method, req.URL.String(), newBody)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	newReq.Header = req.Header
 	newReq.Header.Set("Content-Type", "application/json")
 
 	return
-}
-
-//fcm
-var fcmRegex = []*regexp.Regexp{
-	regexp.MustCompile("\\\\"),
-	regexp.MustCompile(`"`),
-	regexp.MustCompile(`^`),
-	regexp.MustCompile(`$`),
 }
 
 func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
@@ -189,12 +183,22 @@ func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
 	if len(body) > 1024*4-4 {
 		return nil, errors.New("length")
 	}
-	body = fcmRegex[0].ReplaceAll(body, []byte("\\\\"))
-	body = fcmRegex[1].ReplaceAll(body, []byte(`\\"`))
-	body = fcmRegex[2].ReplaceAll(body, []byte(`{"to":"`+token+`","data":{"body":"`))
-	body = fcmRegex[3].ReplaceAll(body, []byte("\"}}"))
 
-	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", bytes.NewReader(body))
+	newBody, err := parseJson(struct {
+		To   string            `json:"to"`
+		Data map[string]string `json:"data"`
+	}{
+		To: token,
+		Data: map[string]string{
+			"body": string(body),
+		},
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", newBody)
 
 	for n, h := range req.Header {
 		newReq.Header[n] = h
@@ -204,6 +208,15 @@ func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
 	newReq.Header.Set("Authorization", "key="+*fcmServerKey)
 
 	return
+}
+
+func parseJson(inp interface{}) (io.Reader, error) {
+	newBody := bytes.NewBuffer([]byte(""))
+	e := json.NewEncoder(newBody)
+	e.SetEscapeHTML(false)
+	e.SetIndent("", "")
+	return newBody, e.Encode(inp)
+
 }
 
 // utilities
