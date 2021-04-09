@@ -79,7 +79,7 @@ func main() {
 }
 
 //function that runs on (almost) every http request
-func handle(translate func([]byte, http.Request) (*http.Request, error)) func(http.ResponseWriter, *http.Request) {
+func handle(translate func([]byte, http.Request) (*http.Request, *http.Response, error)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 
@@ -87,31 +87,44 @@ func handle(translate func([]byte, http.Request) (*http.Request, error)) func(ht
 		io.ReadFull(r.Body, body)
 		body = bytes.Trim(body, "\x00")
 
-		req, err := translate(body, *r)
-		if errHandle(err, w) {
-			return
-		}
+		req, resp, err := translate(body, *r)
 
-		client := http.Client{} //actually process the translated request
-		resp, err := client.Do(req)
-		if errHandle(err, w) {
-			return
-		}
-		defer resp.Body.Close()
+		if err != nil {
+			if errHandle(err, w) {
+				return
+			}
+		} else if req != nil {
+			client := http.Client{} //actually process the translated request
+			resp, err = client.Do(req)
+			if errHandle(err, w) {
+				return
+			}
+			defer resp.Body.Close()
 
-		//copy reply into new request
-		for i, j := range resp.Header {
-			w.Header()[i] = j
-		}
-		body, err = ioutil.ReadAll(resp.Body)
-		if errHandle(err, w) {
-			return
-		}
+			//copy reply into new request
+			for i, j := range resp.Header {
+				w.Header()[i] = j
+			}
+			body, err = ioutil.ReadAll(resp.Body)
+			if errHandle(err, w) {
+				return
+			}
 
-		w.WriteHeader(resp.StatusCode)
-		_, err = w.Write(body)
-		if errHandle(err, w) {
-			return
+			w.WriteHeader(resp.StatusCode)
+			_, err = w.Write(body)
+			if errHandle(err, w) {
+				return
+			}
+		} else if resp != nil {
+			w.WriteHeader(resp.StatusCode)
+
+			b, _ := ioutil.ReadAll(resp.Body) //TODO handle
+			resp.Body.Close()
+			w.Write(b)
+			//TODO copy headers?
+
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 		return
@@ -139,23 +152,58 @@ func errHandle(e error, w http.ResponseWriter) bool {
 	return false
 }
 
+var enabledString string = "anything can go in here"
+
 // various translaters
 var handlers = []struct {
 	path     string
-	action   func([]byte, http.Request) (*http.Request, error)
+	action   func([]byte, http.Request) (*http.Request, *http.Response, error)
 	variable *string
 }{
 	{"/UP", gotify, gotifyAddr},
 	{"/FCM", fcm, fcmServerKey},
+	{"/_matrix/push/v1/notify", matrix, &enabledString},
 }
 
-func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
+func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
+	if req.Method == http.MethodGet {
+		defaultResp = &http.Response{
+			Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"gateway":"matrix"}`))),
+		}
+		defaultResp.Write(bytes.NewBuffer(nil))
+
+		return
+	}
+
+	pkStruct := struct {
+		Notification struct {
+			Devices []struct {
+				PushKey string
+			}
+		}
+	}{}
+	json.Unmarshal(body, &pkStruct)
+	pushKey := pkStruct.Notification.Devices[0].PushKey
+
+	newReq, err = http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
+	if err != nil {
+		fmt.Println(err)
+		newReq = nil
+		return
+	}
+
+	newReq.Header = req.Header
+	newReq.Header.Set("Content-Type", "application/json")
+	return
+}
+
+func gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 
 	req.URL.Scheme = gotifyScheme
 	req.URL.Host = *gotifyAddr
 	req.URL.Path = "/message"
 
-	newBody, err := parseJson(struct {
+	newBody, err := encodeJSON(struct {
 		Message string `json:"message"`
 	}{
 		Message: string(body),
@@ -177,14 +225,14 @@ func gotify(body []byte, req http.Request) (newReq *http.Request, err error) {
 	return
 }
 
-func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
+func fcm(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 	token := req.URL.Query().Get("token")
 
 	if len(body) > 1024*4-4 {
-		return nil, errors.New("length")
+		return nil, nil, errors.New("length")
 	}
 
-	newBody, err := parseJson(struct {
+	newBody, err := encodeJSON(struct {
 		To   string            `json:"to"`
 		Data map[string]string `json:"data"`
 	}{
@@ -210,7 +258,7 @@ func fcm(body []byte, req http.Request) (newReq *http.Request, err error) {
 	return
 }
 
-func parseJson(inp interface{}) (io.Reader, error) {
+func encodeJSON(inp interface{}) (io.Reader, error) {
 	newBody := bytes.NewBuffer([]byte(""))
 	e := json.NewEncoder(newBody)
 	e.SetEscapeHTML(false)
