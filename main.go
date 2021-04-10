@@ -81,7 +81,6 @@ func main() {
 //function that runs on (almost) every http request
 func handle(translate func([]byte, http.Request) (*http.Request, *http.Response, error)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 
 		body := make([]byte, 1024*100) //read limited chunk of request body
 		io.ReadFull(r.Body, body)
@@ -89,10 +88,13 @@ func handle(translate func([]byte, http.Request) (*http.Request, *http.Response,
 
 		req, resp, err := translate(body, *r)
 
+		var respType string
+
 		if err != nil {
 			if errHandle(err, w) {
 				return
 			}
+			respType = "err"
 		} else if req != nil {
 			client := http.Client{} //actually process the translated request
 			resp, err = client.Do(req)
@@ -115,17 +117,22 @@ func handle(translate func([]byte, http.Request) (*http.Request, *http.Response,
 			if errHandle(err, w) {
 				return
 			}
+			respType = "forward"
 		} else if resp != nil {
 			w.WriteHeader(resp.StatusCode)
 
 			b, _ := ioutil.ReadAll(resp.Body) //TODO handle
 			resp.Body.Close()
+			println(string(b))
 			w.Write(b)
 			//TODO copy headers?
 
+			respType = "return"
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
+			respType = "unknown error"
 		}
+		log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent(), respType)
 
 		return
 	}
@@ -167,10 +174,11 @@ var handlers = []struct {
 
 func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 	if req.Method == http.MethodGet {
+		content := []byte(`{"gateway":"matrix"}`)
 		defaultResp = &http.Response{
-			Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"gateway":"matrix"}`))),
+			Body: ioutil.NopCloser(bytes.NewReader(content)),
 		}
-		defaultResp.Write(bytes.NewBuffer(nil))
+		defaultResp.StatusCode = http.StatusOK
 
 		return
 	}
