@@ -12,32 +12,31 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"time"
 
 	phttp "github.com/hakobe/paranoidhttp"
-	flag "github.com/ogier/pflag"
 )
 
-var listenAddr = flag.StringP("listen", "l", "127.0.0.1:5000", "What address to listen on")
-var verbose = flag.BoolP("verbose", "v", false, "log all requests")
-
-var gotifyAddr = flag.String("gotify", "", "What hostname:port is gotify on")
-var gotifyInsecure = flag.BoolP("gotifyInsecure", "s", true, "http not https to gotify when set when true")
-var gotifyScheme = "https"
-
-var fcmServerKey = flag.String("fcm", "", "Firebase server key - See docs for more info")
+var config *Config
 
 func init() {
-	flag.Parse()
+	config = Parse("config.toml")
+	if config == nil {
+		os.Exit(1)
+	}
 
-	if *gotifyInsecure {
-		gotifyScheme = "http"
+	handlers = []handler{
+		{"/UP", gotify, config.Rewrite.Gotify, false},
+		{"/FCM", fcm, config.Rewrite.FCM, false},
+		{"/_matrix/push/v1/notify", matrix, config.Gateway.Matrix, true},
 	}
 }
+
 func main() {
 	myRouter := http.NewServeMux()
 	for _, i := range handlers {
-		if len(*i.variable) > 0 {
+		if !reflect.ValueOf(i.variable).IsNil() {
 			myRouter.HandleFunc(i.path, handle(i))
 		}
 	}
@@ -47,7 +46,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:    *listenAddr,
+		Addr:    config.ListenAddr,
 		Handler: myRouter,
 	}
 
@@ -69,9 +68,9 @@ func main() {
 		close(done)
 	}()
 
-	log.Println("Server is ready to handle requests at", *listenAddr)
+	log.Println("Server is ready to handle requests at", config.ListenAddr)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Could not listen on %s: %v\n", *listenAddr, err)
+		log.Fatalf("Could not listen on %s: %v\n", config.ListenAddr, err)
 	}
 
 	<-done
@@ -145,7 +144,7 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
 		if e.Error() == "length" {
-			if *verbose {
+			if config.verbose {
 				log.Println("Too long request")
 			}
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
@@ -153,14 +152,14 @@ func errHandle(e error, w http.ResponseWriter) bool {
 			return true
 
 		} else if e.Error() == "Gateway URL" {
-			if *verbose {
+			if config.verbose {
 				log.Println("Unknown URL to forward Gateway request to")
 			}
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Request format incorrect\n"))
 			return true
 		} else {
-			if *verbose {
+			if config.verbose {
 				log.Println("panic")
 				log.Println(e)
 			}
@@ -177,16 +176,12 @@ type handlerAction = func([]byte, http.Request) (*http.Request, *http.Response, 
 type handler struct {
 	path     string
 	action   handlerAction
-	variable *string
+	variable interface{}
 	gateway  bool //false if rewrite proxy
 }
 
 // various translaters
-var handlers = []handler{
-	{"/UP", gotify, gotifyAddr, false},
-	{"/FCM", fcm, fcmServerKey, false},
-	{"/_matrix/push/v1/notify", matrix, &enabledString, true},
-}
+var handlers = []handler{}
 
 func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 	if req.Method == http.MethodGet {
@@ -226,8 +221,8 @@ func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 
 func gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 
-	req.URL.Scheme = gotifyScheme
-	req.URL.Host = *gotifyAddr
+	req.URL.Scheme = config.Rewrite.Gotify.Scheme
+	req.URL.Host = config.Rewrite.Gotify.Address
 	req.URL.Path = "/message"
 
 	newBody, err := encodeJSON(struct {
@@ -280,7 +275,7 @@ func fcm(body []byte, req http.Request) (newReq *http.Request, defaultResp *http
 	}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+*fcmServerKey)
+	newReq.Header.Set("Authorization", "key="+config.Rewrite.FCM.Key)
 
 	return
 }

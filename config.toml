@@ -1,0 +1,16 @@
+listenAddr = "127.0.0.1:5000"
+verbose = false 
+
+
+# you can comment out categories to disable the endpoint
+[gateway]
+  [gateway.matrix] # takes no params but this needs to be declared to enable the endpoint
+
+[rewrite]
+
+  #[rewrite.fcm] #conmmenting disables forwarding fcm
+  # key = ""  #Firebase server key - See docs for more info
+
+  [rewrite.gotify]
+    address = "localhost:8000" #What hostname:port is gotify on
+    scheme = "https" #http or https
