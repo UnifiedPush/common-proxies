@@ -35,10 +35,14 @@ func Parse(location string) *Config {
 
 	config := Config{}
 	b, err := ioutil.ReadFile(location)
+	if err != nil {
+		log.Println("Unable to find", location, "exiting...")
+		return nil
+	}
 	b, err = ioutil.ReadAll(toml.New(bytes.NewReader(b)))
 	err = json.Unmarshal(b, &config)
 	if err != nil {
-		log.Println("Error reading/parsing config file", err)
+		log.Println("Error parsing config file exiting...", err)
 		return nil
 	}
 
