@@ -1,2 +1,4 @@
+github.com/hakobe/paranoidhttp v0.2.0 h1:0UPuT7Vo4jkoGSJCOnPWSDc4V05q/7Q15i9N81/0asE=
+github.com/hakobe/paranoidhttp v0.2.0/go.mod h1:f9cFbB2hM4ZcEgWu0zw9+hjzk5kG/Ys8jxEmyMBBeqk=
 github.com/ogier/pflag v0.0.1 h1:RW6JSWSu/RkSatfcLtogGfFgpim5p7ARQ10ECk5O750=
 github.com/ogier/pflag v0.0.1/go.mod h1:zkFki7tvTa0tafRvTBIZTvzYyAu6kQhPZFnshFFPE+g=

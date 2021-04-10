@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"time"
 
+	phttp "github.com/hakobe/paranoidhttp"
 	flag "github.com/ogier/pflag"
 )
 
@@ -37,7 +38,7 @@ func main() {
 	myRouter := http.NewServeMux()
 	for _, i := range handlers {
 		if len(*i.variable) > 0 {
-			myRouter.HandleFunc(i.path, handle(i.action))
+			myRouter.HandleFunc(i.path, handle(i))
 		}
 	}
 	myRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -79,24 +80,28 @@ func main() {
 }
 
 //function that runs on (almost) every http request
-func handle(translate func([]byte, http.Request) (*http.Request, *http.Response, error)) func(http.ResponseWriter, *http.Request) {
+func handle(h handler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		body := make([]byte, 1024*100) //read limited chunk of request body
 		io.ReadFull(r.Body, body)
 		body = bytes.Trim(body, "\x00")
 
-		req, resp, err := translate(body, *r)
+		req, resp, err := h.action(body, *r)
 
 		var respType string
 
 		if err != nil {
-			if errHandle(err, w) {
-				return
-			}
+			errHandle(err, w)
 			respType = "err"
 		} else if req != nil {
-			client := http.Client{} //actually process the translated request
+			client := &http.Client{} //actually process the translated request
+
+			if h.gateway {
+				client, _, _ = phttp.NewClient()
+			}
+			client.Timeout = 10 * time.Second
+
 			resp, err = client.Do(req)
 			if errHandle(err, w) {
 				return
@@ -147,6 +152,13 @@ func errHandle(e error, w http.ResponseWriter) bool {
 			w.Write([]byte("Request is too long\n"))
 			return true
 
+		} else if e.Error() == "Gateway URL" {
+			if *verbose {
+				log.Println("Unknown URL to forward Gateway request to")
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Request format incorrect\n"))
+			return true
 		} else {
 			if *verbose {
 				log.Println("panic")
@@ -161,15 +173,19 @@ func errHandle(e error, w http.ResponseWriter) bool {
 
 var enabledString string = "anything can go in here"
 
-// various translaters
-var handlers = []struct {
+type handlerAction = func([]byte, http.Request) (*http.Request, *http.Response, error)
+type handler struct {
 	path     string
-	action   func([]byte, http.Request) (*http.Request, *http.Response, error)
+	action   handlerAction
 	variable *string
-}{
-	{"/UP", gotify, gotifyAddr},
-	{"/FCM", fcm, fcmServerKey},
-	{"/_matrix/push/v1/notify", matrix, &enabledString},
+	gateway  bool //false if rewrite proxy
+}
+
+// various translaters
+var handlers = []handler{
+	{"/UP", gotify, gotifyAddr, false},
+	{"/FCM", fcm, fcmServerKey, false},
+	{"/_matrix/push/v1/notify", matrix, &enabledString, true},
 }
 
 func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
@@ -191,6 +207,9 @@ func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 		}
 	}{}
 	json.Unmarshal(body, &pkStruct)
+	if !(len(pkStruct.Notification.Devices) > 0) {
+		return nil, nil, errors.New("Gateway URL")
+	}
 	pushKey := pkStruct.Notification.Devices[0].PushKey
 
 	newReq, err = http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
