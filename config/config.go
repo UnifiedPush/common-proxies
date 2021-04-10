@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"bytes"
@@ -9,9 +9,11 @@ import (
 	"github.com/komkom/toml"
 )
 
-type Config struct {
+var Config *Configuration
+
+type Configuration struct {
 	ListenAddr string
-	verbose    bool
+	Verbose    bool
 
 	Gateway Gateway
 
@@ -31,9 +33,9 @@ type Gateway struct {
 	Matrix *struct{}
 }
 
-func Parse(location string) *Config {
+func ParseConf(location string) *Configuration {
 
-	config := Config{}
+	config := Configuration{}
 	b, err := ioutil.ReadFile(location)
 	if err != nil {
 		log.Println("Unable to find", location, "exiting...")
@@ -52,7 +54,7 @@ func Parse(location string) *Config {
 	return &config
 }
 
-func defaults(c *Config) (failed bool) {
+func defaults(c *Configuration) (failed bool) {
 
 	if c.Rewrite.Gotify != nil {
 		if len(c.Rewrite.Gotify.Address) == 0 {

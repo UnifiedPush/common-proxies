@@ -3,9 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,20 +13,34 @@ import (
 	"time"
 
 	phttp "github.com/hakobe/paranoidhttp"
+	. "github.com/karmanyaahm/up_rewrite/config"
+	"github.com/karmanyaahm/up_rewrite/gateway"
+	"github.com/karmanyaahm/up_rewrite/rewrite"
 )
 
-var config *Config
+type handlerAction = func([]byte, http.Request) (*http.Request, *http.Response, error)
+type handlerRespAction = func(*http.Response)
+type handler struct {
+	path       string
+	reqAction  handlerAction
+	respAction handlerRespAction
+	variable   interface{}
+	gateway    bool //false if rewrite proxy
+}
+
+// various translaters
+var handlers = []handler{}
 
 func init() {
-	config = Parse("config.toml")
-	if config == nil {
+	Config = ParseConf("config.toml")
+	if Config == nil {
 		os.Exit(1)
 	}
 
 	handlers = []handler{
-		{"/UP", gotify, config.Rewrite.Gotify, false},
-		{"/FCM", fcm, config.Rewrite.FCM, false},
-		{"/_matrix/push/v1/notify", matrix, config.Gateway.Matrix, true},
+		{"/UP", rewrite.Gotify, nil, Config.Rewrite.Gotify, false},
+		{"/FCM", rewrite.FCM, nil, Config.Rewrite.FCM, false},
+		{"/_matrix/push/v1/notify", gateway.Matrix, gateway.MatrixResp, Config.Gateway.Matrix, true},
 	}
 }
 
@@ -46,7 +57,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:    config.ListenAddr,
+		Addr:    Config.ListenAddr,
 		Handler: myRouter,
 	}
 
@@ -68,9 +79,9 @@ func main() {
 		close(done)
 	}()
 
-	log.Println("Server is ready to handle requests at", config.ListenAddr)
+	log.Println("Server is ready to handle requests at", Config.ListenAddr)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Could not listen on %s: %v\n", config.ListenAddr, err)
+		log.Fatalf("Could not listen on %s: %v\n", Config.ListenAddr, err)
 	}
 
 	<-done
@@ -86,7 +97,7 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 		io.ReadFull(r.Body, body)
 		body = bytes.Trim(body, "\x00")
 
-		req, resp, err := h.action(body, *r)
+		req, resp, err := h.reqAction(body, *r)
 
 		var respType string
 
@@ -105,6 +116,11 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 			if errHandle(err, w) {
 				return
 			}
+
+			if h.respAction != nil {
+				h.respAction(resp)
+			}
+
 			defer resp.Body.Close()
 
 			//copy reply into new request
@@ -144,7 +160,7 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
 		if e.Error() == "length" {
-			if config.verbose {
+			if Config.Verbose {
 				log.Println("Too long request")
 			}
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
@@ -152,15 +168,15 @@ func errHandle(e error, w http.ResponseWriter) bool {
 			return true
 
 		} else if e.Error() == "Gateway URL" {
-			if config.verbose {
+			if Config.Verbose {
 				log.Println("Unknown URL to forward Gateway request to")
 			}
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Request format incorrect\n"))
 			return true
 		} else {
-			if config.verbose {
-				log.Println("panic")
+			if Config.Verbose {
+				log.Print("panic: ")
 				log.Println(e)
 			}
 			w.WriteHeader(http.StatusBadGateway)
@@ -168,133 +184,4 @@ func errHandle(e error, w http.ResponseWriter) bool {
 		}
 	}
 	return false
-}
-
-var enabledString string = "anything can go in here"
-
-type handlerAction = func([]byte, http.Request) (*http.Request, *http.Response, error)
-type handler struct {
-	path     string
-	action   handlerAction
-	variable interface{}
-	gateway  bool //false if rewrite proxy
-}
-
-// various translaters
-var handlers = []handler{}
-
-func matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
-	if req.Method == http.MethodGet {
-		content := []byte(`{"gateway":"matrix"}`)
-		defaultResp = &http.Response{
-			Body: ioutil.NopCloser(bytes.NewReader(content)),
-		}
-		defaultResp.StatusCode = http.StatusOK
-
-		return
-	}
-
-	pkStruct := struct {
-		Notification struct {
-			Devices []struct {
-				PushKey string
-			}
-		}
-	}{}
-	json.Unmarshal(body, &pkStruct)
-	if !(len(pkStruct.Notification.Devices) > 0) {
-		return nil, nil, errors.New("Gateway URL")
-	}
-	pushKey := pkStruct.Notification.Devices[0].PushKey
-
-	newReq, err = http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
-	if err != nil {
-		fmt.Println(err)
-		newReq = nil
-		return
-	}
-
-	newReq.Header = req.Header
-	newReq.Header.Set("Content-Type", "application/json")
-	return
-}
-
-func gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
-
-	req.URL.Scheme = config.Rewrite.Gotify.Scheme
-	req.URL.Host = config.Rewrite.Gotify.Address
-	req.URL.Path = "/message"
-
-	newBody, err := encodeJSON(struct {
-		Message string `json:"message"`
-	}{
-		Message: string(body),
-	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	newReq, err = http.NewRequest(req.Method, req.URL.String(), newBody)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	newReq.Header = req.Header
-	newReq.Header.Set("Content-Type", "application/json")
-
-	return
-}
-
-func fcm(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
-	token := req.URL.Query().Get("token")
-
-	if len(body) > 1024*4-4 {
-		return nil, nil, errors.New("length")
-	}
-
-	newBody, err := encodeJSON(struct {
-		To   string            `json:"to"`
-		Data map[string]string `json:"data"`
-	}{
-		To: token,
-		Data: map[string]string{
-			"body": string(body),
-		},
-	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", newBody)
-
-	for n, h := range req.Header {
-		newReq.Header[n] = h
-	}
-
-	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+config.Rewrite.FCM.Key)
-
-	return
-}
-
-func encodeJSON(inp interface{}) (io.Reader, error) {
-	newBody := bytes.NewBuffer([]byte(""))
-	e := json.NewEncoder(newBody)
-	e.SetEscapeHTML(false)
-	e.SetIndent("", "")
-	return newBody, e.Encode(inp)
-
-}
-
-// utilities
-func min(i, j int) (k int) {
-	if i < j {
-		k = i
-	} else {
-		k = j
-	}
-	return
 }
