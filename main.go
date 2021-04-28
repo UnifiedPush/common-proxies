@@ -124,9 +124,9 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 			defer resp.Body.Close()
 
 			//copy reply into new request
-			for i, j := range resp.Header {
-				w.Header()[i] = j
-			}
+			//for i, j := range resp.Header {
+			//	w.Header()[i] = j
+			//}
 			body, err = ioutil.ReadAll(resp.Body)
 			if errHandle(err, w) {
 				return

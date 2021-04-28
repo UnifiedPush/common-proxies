@@ -32,9 +32,9 @@ func FCM(body []byte, req http.Request) (newReq *http.Request, defaultResp *http
 
 	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", newBody)
 
-	for n, h := range req.Header {
-		newReq.Header[n] = h
-	}
+	//for n, h := range req.Header {
+	//	newReq.Header[n] = h
+	//}
 
 	newReq.Header.Set("Content-Type", "application/json")
 	newReq.Header.Set("Authorization", "key="+Config.Rewrite.FCM.Key)

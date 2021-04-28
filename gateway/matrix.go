@@ -40,7 +40,7 @@ func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 		return
 	}
 
-	newReq.Header = req.Header
+	//newReq.Header = req.Header
 	newReq.Header.Set("Content-Type", "application/json")
 	return
 }
