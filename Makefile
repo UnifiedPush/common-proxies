@@ -1,5 +1,9 @@
+default: local
 docker:
-	docker run --rm -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
+	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
+local:
+	install -d bin
+	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 go build -o bin/up-rewrite-linux-amd64	
 all:
 	./go-build-all.sh	
 	install -d bin

@@ -1,10 +1,14 @@
 [Unit]
 Description=Rewrite Proxy for some UnifiedPush providers in Go
 After=network.target
+Requires=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/up-rewrite-proxy --fcm="<INSERT FCM KEY HERE>" -l127.0.0.1:5000 --gotify="<GOTIFY ADDRESS example localhost:8000"
+WorkingDirectory={{directory_where_things_are_installed_to}}
+ExecStart={{directory_where_things_are_installed_to}}/up-rewrite-proxy
+Restart=always
+RestartSec=10
 
 
 [Install]
