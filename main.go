@@ -92,9 +92,11 @@ func main() {
 //function that runs on (almost) every http request
 func handle(h handler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var nread, nwritten int
 
 		body := make([]byte, 1024*100) //read limited chunk of request body
-		io.ReadFull(r.Body, body)
+		nread, err := io.ReadFull(r.Body, body)
+		r.Body.Close()
 		body = bytes.Trim(body, "\x00")
 
 		req, resp, err := h.reqAction(body, *r)
@@ -133,7 +135,7 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 			}
 
 			w.WriteHeader(resp.StatusCode)
-			_, err = w.Write(body)
+			nwritten, err = w.Write(body)
 			if errHandle(err, w) {
 				return
 			}
@@ -143,7 +145,6 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 
 			b, _ := ioutil.ReadAll(resp.Body) //TODO handle
 			resp.Body.Close()
-			println(string(b))
 			w.Write(b)
 			//TODO copy headers?
 
@@ -152,7 +153,7 @@ func handle(h handler) func(http.ResponseWriter, *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			respType = "unknown error"
 		}
-		log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent(), respType)
+		log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
 
 		return
 	}

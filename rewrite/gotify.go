@@ -10,9 +10,10 @@ import (
 
 func Gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
 
-	req.URL.Scheme = Config.Rewrite.Gotify.Scheme
-	req.URL.Host = Config.Rewrite.Gotify.Address
-	req.URL.Path = "/message"
+	url := *req.URL
+	url.Scheme = Config.Rewrite.Gotify.Scheme
+	url.Host = Config.Rewrite.Gotify.Address
+	url.Path = "/message"
 
 	newBody, err := utils.EncodeJSON(struct {
 		Message string `json:"message"`
@@ -24,7 +25,7 @@ func Gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 		return
 	}
 
-	newReq, err = http.NewRequest(req.Method, req.URL.String(), newBody)
+	newReq, err = http.NewRequest(req.Method, url.String(), newBody)
 
 	if err != nil {
 		fmt.Println(err)
