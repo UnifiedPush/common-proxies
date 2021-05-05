@@ -16,10 +16,12 @@ jobs:
           args: make all
           # apparently github auto-mounts dirs so no volumes needed
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: svenstaro/upload-release-action@v2
         with:
-          files: "bin/*"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: "bin/*"
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
 
 
