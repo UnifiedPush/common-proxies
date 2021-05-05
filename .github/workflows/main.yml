@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 name: Build and release
 
@@ -9,10 +9,12 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    container: golang:1.15
     steps:
       - uses: actions/checkout@v2
-      - run: make all 
+      - uses: docker://golang:1.15
+        with:
+          args: make all
+          # apparently github auto-mounts dirs so no volumes needed
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
