@@ -1,5 +1,5 @@
 listenAddr = "127.0.0.1:5000"
-verbose = false 
+verbose = true 
 
 
 # you can comment out categories to disable the endpoint
