@@ -1,0 +1,30 @@
+
+on: 
+  pull_request:
+    branches:
+      - "**"
+  push:
+    branches:
+      - "**"
+    tags:
+      - "!v**"
+  
+
+name: Build test
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker://golang:1.15
+        with:
+          args: make test
+          # apparently github auto-mounts dirs so no volumes needed
+      - uses: actions/upload-artifact@v2
+        with:
+          name: builds
+          path: up-rewrite
+
+

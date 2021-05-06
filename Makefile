@@ -1,14 +1,14 @@
-default: local
-docker:
-	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
 local:
-	install -d bin
-	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 go build -o bin/up-rewrite-linux-amd64	
+	go build -o up-rewrite
+local-docker:
+	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make local
 all:
-	./go-build-all.sh	
 	install -d bin
-	for f in myapp*; do \
-   	    mv -- "$$f" "bin/up-rewrite$${f#myapp}"; \
-	done
+	OUTPUT="bin/up-rewrite" ./go-build-all.sh	
 	cd bin; \
-	sha256sum * > sha256
+		sha256sum * > sha256
+all-docker:
+	docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15 make all	
+
+test: local
+	go test # no tests yet defined as of writing this

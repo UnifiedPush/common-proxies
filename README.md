@@ -20,7 +20,7 @@ The values FCM, UP, etc will depend on which ones you actually have enabled. The
 ## Rewrite Proxy
 ### FCM
 
-This is meant to be hosted by the app developers or someone who has access to the Firebase settings for that project. The FCM key under `rewrite.fcm` is this secret key.
+This is meant to be hosted by the app developers or someone who has access to the Firebase settings for that project. The FCM key under `rewrite.fcm` in the config file is this secret key.
 
 ### Gotify
 
