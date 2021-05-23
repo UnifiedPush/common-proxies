@@ -1,31 +1,33 @@
 package main
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
+	"strconv"
 	"time"
 
 	phttp "github.com/hakobe/paranoidhttp"
 	. "github.com/karmanyaahm/up_rewrite/config"
-	"github.com/karmanyaahm/up_rewrite/gateway"
-	"github.com/karmanyaahm/up_rewrite/rewrite"
 )
 
-type handlerAction = func([]byte, http.Request) (*http.Request, *http.Response, error)
-type handlerRespAction = func(*http.Response)
-type handler struct {
-	path       string
-	reqAction  handlerAction
-	respAction handlerRespAction
-	variable   interface{}
-	gateway    bool //false if rewrite proxy
+type handler Proxy
+
+type Gateway interface {
+	Get() []byte
+	Resp(*http.Response)
+	Proxy
+}
+
+type Proxy interface {
+	Req([]byte, http.Request) (*http.Request, error)
+	Path() string
 }
 
 // various translaters
@@ -37,18 +39,18 @@ func init() {
 		os.Exit(1)
 	}
 
-	handlers = []handler{
-		{"/UP", rewrite.Gotify, nil, Config.Rewrite.Gotify, false},
-		{"/FCM", rewrite.FCM, nil, Config.Rewrite.FCM, false},
-		{"/_matrix/push/v1/notify", gateway.Matrix, gateway.MatrixResp, Config.Gateway.Matrix, true},
-	}
 }
 
 func main() {
 	myRouter := http.NewServeMux()
+	handlers = []handler{
+		Config.Rewrite.Gotify,
+		Config.Rewrite.FCM,
+		Config.Gateway.Matrix,
+	}
 	for _, i := range handlers {
-		if !reflect.ValueOf(i.variable).IsNil() {
-			myRouter.HandleFunc(i.path, handle(i))
+		if i != nil {
+			myRouter.HandleFunc(i.Path(), handle(i))
 		}
 	}
 	myRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -89,73 +91,136 @@ func main() {
 
 }
 
+func versionHandler() func(http.ResponseWriter) {
+	b, err := json.Marshal([]string{"UnifiedPush Provider"})
+	if err != nil {
+		panic(err) //should be const so can panic np
+	}
+	return func(w http.ResponseWriter) {
+		w.Write(b)
+	}
+}
+
 //function that runs on (almost) every http request
 func handle(h handler) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var nread, nwritten int
-
-		body := make([]byte, 1024*100) //read limited chunk of request body
-		nread, err := io.ReadFull(r.Body, body)
-		r.Body.Close()
-		body = bytes.Trim(body, "\x00")
-
-		req, resp, err := h.reqAction(body, *r)
-
-		var respType string
-
-		if err != nil {
-			errHandle(err, w)
-			respType = "err"
-		} else if req != nil {
-			client := &http.Client{} //actually process the translated request
-
-			if h.gateway {
-				client, _, _ = phttp.NewClient()
-			}
-			client.Timeout = 10 * time.Second
-
-			resp, err = client.Do(req)
-			if errHandle(err, w) {
-				return
-			}
-
-			if h.respAction != nil {
-				h.respAction(resp)
-			}
-
-			defer resp.Body.Close()
-
-			//copy reply into new request
-			//for i, j := range resp.Header {
-			//	w.Header()[i] = j
-			//}
-			body, err = ioutil.ReadAll(resp.Body)
-			if errHandle(err, w) {
-				return
-			}
-
-			w.WriteHeader(resp.StatusCode)
-			nwritten, err = w.Write(body)
-			if errHandle(err, w) {
-				return
-			}
-			respType = "forward"
-		} else if resp != nil {
-			w.WriteHeader(resp.StatusCode)
-
-			b, _ := ioutil.ReadAll(resp.Body) //TODO handle
-			resp.Body.Close()
-			w.Write(b)
-			//TODO copy headers?
-
-			respType = "return"
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			respType = "unknown error"
+	if h, ok := h.(Gateway); ok {
+		client, _, _ := phttp.NewClient()
+		client.Timeout = 10 * time.Second
+		client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+			return errors.New("NO")
 		}
-		log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
+		return func(w http.ResponseWriter, r *http.Request) {
+			var nread, nwritten int
+			var respType string
 
-		return
+			switch r.Method {
+			case http.MethodGet:
+				w.Write(h.Get())
+			case http.MethodPost:
+				//read upto 20,000 should be enough for any gateway
+				body, err := io.ReadAll(io.LimitReader(r.Body, 20000))
+				r.Body.Close()
+
+				req, err := h.Req(body, *r)
+
+				if err != nil {
+					errHandle(err, w)
+					respType = "err"
+					break
+				}
+				resp, err := client.Do(req)
+				if errHandle(err, w) {
+					return
+				}
+
+				//process resp
+				h.Resp(resp)
+				defer resp.Body.Close()
+				//start forwarding resp
+				body, err = ioutil.ReadAll(resp.Body)
+				if errHandle(err, w) {
+					return
+				}
+
+				w.WriteHeader(resp.StatusCode)
+				_, err = w.Write(body)
+				if errHandle(err, w) {
+					return
+				}
+				respType = "forward"
+			default:
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				respType = strconv.Itoa(http.StatusMethodNotAllowed)
+			}
+
+			log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
+
+			return
+
+		}
+	} else { //just proxy not gateway
+		client := &http.Client{
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return errors.New("NO")
+			},
+			Timeout: 2 * time.Second,
+		}
+		versionWrite := versionHandler()
+		return func(w http.ResponseWriter, r *http.Request) {
+			var nread, nwritten int
+			var respType string
+
+			switch r.Method {
+
+			case http.MethodGet:
+				if h, ok := h.(Gateway); ok {
+					w.Write(h.Get())
+				} else {
+					versionWrite(w)
+				}
+				return
+
+			case http.MethodPost:
+				//4000 max so little extra
+				body, err := io.ReadAll(io.LimitReader(r.Body, 4005))
+				r.Body.Close()
+
+				if len(body) > 4001 {
+					w.WriteHeader(http.StatusRequestEntityTooLarge)
+					return
+				}
+
+				req, err := h.Req(body, *r)
+
+				if err != nil {
+					errHandle(err, w)
+					respType = "err"
+					break
+				}
+				resp, err := client.Do(req)
+				if errHandle(err, w) {
+					return
+				}
+
+				//read upto 4000 to be able to reuse conn then close
+				io.ReadAll(io.LimitReader(r.Body, 4000))
+				resp.Body.Close()
+
+				w.WriteHeader(resp.StatusCode)
+				if errHandle(err, w) {
+					return
+				}
+				respType = "forward"
+
+			default:
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				respType = strconv.Itoa(http.StatusMethodNotAllowed)
+			}
+
+			log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
+
+			return
+		}
 	}
 }
 func errHandle(e error, w http.ResponseWriter) bool {
@@ -177,7 +242,7 @@ func errHandle(e error, w http.ResponseWriter) bool {
 			return true
 		} else {
 			if Config.Verbose {
-				log.Print("panic: ")
+				log.Print("panic-ish: ")
 				log.Println(e)
 			}
 			w.WriteHeader(http.StatusBadGateway)

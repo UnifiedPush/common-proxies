@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/karmanyaahm/up_rewrite/gateway"
+	"github.com/karmanyaahm/up_rewrite/rewrite"
 	"github.com/komkom/toml"
 )
 
@@ -21,16 +23,11 @@ type Configuration struct {
 }
 
 type Rewrite struct {
-	FCM *struct {
-		Key string
-	}
-	Gotify *struct {
-		Address string
-		Scheme  string
-	}
+	FCM    *rewrite.FCM
+	Gotify *rewrite.Gotify
 }
 type Gateway struct {
-	Matrix *struct{}
+	Matrix *gateway.Matrix
 }
 
 func ParseConf(location string) *Configuration {
@@ -55,23 +52,28 @@ func ParseConf(location string) *Configuration {
 }
 
 func defaults(c *Configuration) (failed bool) {
-
-	if c.Rewrite.Gotify != nil {
-		if len(c.Rewrite.Gotify.Address) == 0 {
+	g := c.Rewrite.Gotify
+	if g != nil {
+		if len(g.Address) == 0 {
 			log.Println("Gotify Address cannot be empty")
 			failed = true
 		}
-		if !(c.Rewrite.Gotify.Scheme == "http" || c.Rewrite.Gotify.Scheme == "https") {
-			c.Rewrite.Gotify.Scheme = "https"
+		if !(g.Scheme == "http" || c.Rewrite.Gotify.Scheme == "https") {
+			g.Scheme = "https"
 			log.Println("Warn: Gotify Scheme incorrect")
 		}
 	}
 
-	if c.Rewrite.FCM != nil {
-		if len(c.Rewrite.FCM.Key) == 0 {
+	f := c.Rewrite.FCM
+	if f != nil {
+		if len(f.Key) == 0 {
 			log.Println("FCM Key cannot be empty")
 			failed = true
 		}
+	}
+
+	m := c.Gateway.Matrix
+	if m != nil {
 	}
 	return
 

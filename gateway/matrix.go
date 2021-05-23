@@ -9,17 +9,18 @@ import (
 	"net/http"
 )
 
-func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
-	if req.Method == http.MethodGet {
-		content := []byte(`{"gateway":"matrix"}`)
-		defaultResp = &http.Response{
-			Body: ioutil.NopCloser(bytes.NewReader(content)),
-		}
-		defaultResp.StatusCode = http.StatusOK
+type Matrix struct {
+}
 
-		return
-	}
+func (m Matrix) Path() string {
+	return "/_matrix/push/v1/notify"
+}
 
+func (m Matrix) Get() []byte {
+	return []byte(`{"gateway":"matrix"}`)
+}
+
+func (m Matrix) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
 	pkStruct := struct {
 		Notification struct {
 			Devices []struct {
@@ -29,7 +30,7 @@ func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 	}{}
 	json.Unmarshal(body, &pkStruct)
 	if !(len(pkStruct.Notification.Devices) > 0) {
-		return nil, nil, errors.New("Gateway URL")
+		return nil, errors.New("Gateway URL")
 	}
 	pushKey := pkStruct.Notification.Devices[0].PushKey
 
@@ -40,7 +41,6 @@ func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 		return
 	}
 
-	//newReq.Header = req.Header
 	newReq.Header.Set("Content-Type", "application/json")
 	return
 }

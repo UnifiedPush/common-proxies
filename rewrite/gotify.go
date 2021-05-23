@@ -4,15 +4,23 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/karmanyaahm/up_rewrite/config"
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-func Gotify(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
+type Gotify struct {
+	Address string
+	Scheme  string
+}
+
+func (Gotify) Path() string {
+	return "/UP"
+}
+
+func (g Gotify) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
 
 	url := *req.URL
-	url.Scheme = Config.Rewrite.Gotify.Scheme
-	url.Host = Config.Rewrite.Gotify.Address
+	url.Scheme = g.Scheme
+	url.Host = g.Address
 	url.Path = "/message"
 
 	newBody, err := utils.EncodeJSON(struct {

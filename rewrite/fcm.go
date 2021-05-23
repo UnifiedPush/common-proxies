@@ -5,15 +5,22 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/karmanyaahm/up_rewrite/config"
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-func FCM(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
+type FCM struct {
+	Key string
+}
+
+func (FCM) Path() string {
+	return "/FCM"
+}
+
+func (f FCM) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
 	token := req.URL.Query().Get("token")
 
 	if len(body) > 1024*4-4 {
-		return nil, nil, errors.New("length")
+		return nil, errors.New("length")
 	}
 
 	newBody, err := utils.EncodeJSON(struct {
@@ -37,7 +44,7 @@ func FCM(body []byte, req http.Request) (newReq *http.Request, defaultResp *http
 	//}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+Config.Rewrite.FCM.Key)
+	newReq.Header.Set("Authorization", "key="+f.Key)
 
 	return
 }
