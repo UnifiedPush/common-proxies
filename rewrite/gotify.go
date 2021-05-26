@@ -44,3 +44,13 @@ func (g Gotify) Req(body []byte, req http.Request) (newReq *http.Request, err er
 
 	return
 }
+
+func (g Gotify) RespCode(resp *http.Response) int {
+	//convert gotify message response to up resp
+	return map[int]int{
+		401: 404,
+		403: 404,
+		400: 502, //unknown how to handle gotify 400 TODO
+		200: 202,
+	}[resp.StatusCode]
+}

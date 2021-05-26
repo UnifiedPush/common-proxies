@@ -13,5 +13,5 @@ verbose = true
   # key = ""  #Firebase server key - See docs for more info
 
   [rewrite.gotify]
-    address = "localhost:8000" #What hostname:port is gotify on
+    address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443
     scheme = "https" #http or https

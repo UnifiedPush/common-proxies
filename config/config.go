@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"sync"
 
 	"github.com/karmanyaahm/up_rewrite/gateway"
 	"github.com/karmanyaahm/up_rewrite/rewrite"
@@ -12,25 +13,25 @@ import (
 )
 
 var Config *Configuration
+var ConfigLock sync.RWMutex
 
 type Configuration struct {
 	ListenAddr string
 	Verbose    bool
 
-	Gateway Gateway
+	Gateway struct {
+		Matrix *gateway.Matrix
+	}
 
-	Rewrite Rewrite
-}
-
-type Rewrite struct {
-	FCM    *rewrite.FCM
-	Gotify *rewrite.Gotify
-}
-type Gateway struct {
-	Matrix *gateway.Matrix
+	Rewrite struct {
+		FCM    *rewrite.FCM
+		Gotify *rewrite.Gotify
+	}
 }
 
 func ParseConf(location string) *Configuration {
+	ConfigLock.Lock()
+	defer ConfigLock.Unlock()
 
 	config := Configuration{}
 	b, err := ioutil.ReadFile(location)

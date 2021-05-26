@@ -17,7 +17,7 @@ func (m Matrix) Path() string {
 }
 
 func (m Matrix) Get() []byte {
-	return []byte(`{"gateway":"matrix"}`)
+	return []byte(`{"gateway":"matrix","unifiedpush":{"gateway":"matrix"}}`)
 }
 
 func (m Matrix) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
@@ -45,6 +45,6 @@ func (m Matrix) Req(body []byte, req http.Request) (newReq *http.Request, err er
 	return
 }
 
-func MatrixResp(r *http.Response) {
-	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{"rejected":[]}`))
+func (Matrix) Resp(r *http.Response) {
+	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{}`))
 }
