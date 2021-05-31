@@ -42,10 +42,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: 
-            - unifiedpush/common-proxies:latest
-            - unifiedpush/common-proxies:$(git describe --tags)
-            - unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
+          tags: unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags),unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
 
 
 
