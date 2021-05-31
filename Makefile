@@ -19,22 +19,7 @@ all-docker:
 test: local
 	go test # no tests yet defined as of writing this
 
-# for local testing
-build-docker-amd64: linux/amd64/build-docker
-
-# for CI
-build-docker-all: linux/amd64,linux/386,linux/arm64/build-docker
-
-
 # check out this if the cross-docker things don't work https://stackoverflow.com/a/65371609/8919142
-%/build-docker:
+prep-build:
 	cp .gitignore .dockerignore
 	sed 's/127.0.0.1/0.0.0.0/' example-config.toml > config.toml # very very stopgap solution until env vars config works
-	docker buildx build --platform $(@D) --output=type=$(DOCKER_OUTPUT) \
-		--cache-to type=local,dest=bin/docker \
-		--cache-from type=local,src=bin/docker \
-		--pull \
-                -t unifiedpush/common-proxies:latest \
-                -t unifiedpush/common-proxies:${VERSION} \
-                -t unifiedpush/common-proxies:$(shell echo $(VERSION) | cut -d '.' -f -2) .
-	rm config.toml .dockerignore
