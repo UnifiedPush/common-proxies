@@ -4,7 +4,7 @@
 1. Download the binary and [example config file](./config.toml) onto your server
 2. Use the following nginx config, or the equivalent for your reverse proxy.
 ```nginx 
-location ~ ^/(FCM|UP|_matrix)/ {    
+location ~ ^/(FCM|UP|_matrix) {    
         proxy_pass            http://127.0.0.1:5000;
 }
 ```
