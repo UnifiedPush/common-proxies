@@ -38,7 +38,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: tags
         run: |
-          export TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags,unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
+          export TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags),unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
           echo "::set-output name=tag::$TAG"
         id: tags
       -  
