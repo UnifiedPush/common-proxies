@@ -36,14 +36,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
+      - name: tags
+        run: |
+          export TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags,unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
+          echo "::set-output name=tag::$TAG"
+        id: tags
+      -  
         name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: unifiedpush/common-proxies:latest,unifiedpush/common-proxies:${{git describe --tags}},unifiedpush/common-proxies:${{git describe --tags | cut -d '.' -f -2}}
-
+          tags: ${{ steps.tags.outputs.tag }}
 
 
