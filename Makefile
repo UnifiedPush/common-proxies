@@ -23,3 +23,6 @@ test: local
 prep-build:
 	cp .gitignore .dockerignore
 	sed 's/127.0.0.1/0.0.0.0/' example-config.toml > config.toml # very very stopgap solution until env vars config works
+build-local: prep-build
+	docker build . -t unifiepush/common-proxies:testing
+	rm .dockerignore config.toml
