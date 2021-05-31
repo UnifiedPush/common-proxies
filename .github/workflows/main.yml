@@ -43,6 +43,8 @@ jobs:
           export TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags),unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)
           echo "::set-output name=tag::$TAG"
         id: tags
+      - name: prep build
+        run: make prep-build
       -  
         name: Build and push
         uses: docker/build-push-action@v2
