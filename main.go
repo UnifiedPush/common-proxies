@@ -13,6 +13,7 @@ import (
 
 	"github.com/karmanyaahm/up_rewrite/config"
 	. "github.com/karmanyaahm/up_rewrite/config"
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 var configFile = flag.String("conf", "config.toml", "path to toml file for config")
@@ -22,15 +23,16 @@ type Gateway interface {
 	Handler
 	Get() []byte
 	Resp(*http.Response)
+	Req([]byte, http.Request) ([]*http.Request, *utils.ProxyError)
 }
 
 type Proxy interface {
 	Handler
 	RespCode(*http.Response) int
+	Req([]byte, http.Request) (*http.Request, *utils.ProxyError)
 }
 
 type Handler interface {
-	Req([]byte, http.Request) (*http.Request, error)
 	Path() string
 }
 

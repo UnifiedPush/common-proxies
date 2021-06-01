@@ -1,7 +1,6 @@
 package rewrite
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -16,12 +15,8 @@ func (FCM) Path() string {
 	return "/FCM"
 }
 
-func (f FCM) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
+func (f FCM) Req(body []byte, req http.Request) (*http.Request, *utils.ProxyError) {
 	token := req.URL.Query().Get("token")
-
-	if len(body) > 1024*4-4 {
-		return nil, errors.New("length")
-	}
 
 	newBody, err := utils.EncodeJSON(struct {
 		To   string            `json:"to"`
@@ -34,17 +29,16 @@ func (f FCM) Req(body []byte, req http.Request) (newReq *http.Request, err error
 	})
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, utils.NewProxyError(502, err) //TODO
 	}
 
-	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", newBody)
-
-	//for n, h := range req.Header {
-	//	newReq.Header[n] = h
-	//}
+	newReq, err := http.NewRequest(http.MethodPost, "https://fcm.googleapis.com/fcm/send", newBody)
+	if err != nil {
+		return nil, utils.NewProxyError(502, err)
+	}
 
 	newReq.Header.Set("Content-Type", "application/json")
 	newReq.Header.Set("Authorization", "key="+f.Key)
 
-	return
+	return newReq, nil
 }

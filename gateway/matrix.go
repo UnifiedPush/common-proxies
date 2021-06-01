@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 type Matrix struct {
@@ -20,7 +21,7 @@ func (m Matrix) Get() []byte {
 	return []byte(`{"gateway":"matrix","unifiedpush":{"gateway":"matrix"}}`)
 }
 
-func (m Matrix) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
+func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, *utils.ProxyError) {
 	pkStruct := struct {
 		Notification struct {
 			Devices []struct {
@@ -30,19 +31,17 @@ func (m Matrix) Req(body []byte, req http.Request) (newReq *http.Request, err er
 	}{}
 	json.Unmarshal(body, &pkStruct)
 	if !(len(pkStruct.Notification.Devices) > 0) {
-		return nil, errors.New("Gateway URL")
+		return nil, utils.NewProxyError(400, errors.New("Gateway URL"))
 	}
 	pushKey := pkStruct.Notification.Devices[0].PushKey
 
-	newReq, err = http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
+	newReq, err := http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
 	if err != nil {
-		fmt.Println(err)
-		newReq = nil
-		return
+		return nil, utils.NewProxyError(502, err) //TODO
 	}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	return
+	return []*http.Request{newReq}, nil
 }
 
 func (Matrix) Resp(r *http.Response) {

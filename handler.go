@@ -47,7 +47,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 				respType = "err"
 				break
 			}
-			resp, err := client.Do(req)
+			resp, err := client.Do(req[0])
 			if errHandle(err, w) {
 				return
 			}
@@ -89,52 +89,50 @@ func proxyHandler(h Proxy) HttpHandler {
 	}
 	versionWrite := versionHandler()
 	return func(w http.ResponseWriter, r *http.Request) {
-		var nread, nwritten int
+		var nread, code int = 0, 200
 		var respType string
 
 		switch r.Method {
 
 		case http.MethodGet:
 			versionWrite(w)
-
 		case http.MethodPost:
 			//4000 max so little extra
 			body, err := io.ReadAll(io.LimitReader(r.Body, 4005))
 			r.Body.Close()
 
-			if len(body) > 4001 {
-				w.WriteHeader(http.StatusRequestEntityTooLarge)
-				return
+			nread = len(body)
+			if nread > 4001 {
+				code = http.StatusRequestEntityTooLarge
+				break
 			}
 
 			req, err := h.Req(body, *r)
 
-			if err != nil {
-				errHandle(err, w)
+			if errHandle(err, w) {
 				respType = "err"
 				break
 			}
 			resp, err := client.Do(req)
 			if errHandle(err, w) {
-				return
+				respType = "err"
+				break
 			}
 
 			//read upto 4000 to be able to reuse conn then close
 			io.ReadAll(io.LimitReader(r.Body, 4000))
 			resp.Body.Close()
 
-			w.WriteHeader(h.RespCode(resp))
-			if errHandle(err, w) {
-				return
-			}
+			code = h.RespCode(resp)
 			respType = "forward"
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			respType = strconv.Itoa(http.StatusMethodNotAllowed)
+			code = http.StatusMethodNotAllowed
+			respType = "method not allowed"
 		}
+		w.WriteHeader(code)
 
-		log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
+		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType)
 
 		return
 	}
@@ -147,7 +145,6 @@ func errHandle(e error, w http.ResponseWriter) bool {
 				log.Println("Too long request")
 			}
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
-			w.Write([]byte("Request is too long\n"))
 			return true
 
 		} else if e.Error() == "Gateway URL" {
@@ -155,7 +152,6 @@ func errHandle(e error, w http.ResponseWriter) bool {
 				log.Println("Unknown URL to forward Gateway request to")
 			}
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Request format incorrect\n"))
 			return true
 		} else {
 			if Config.Verbose {

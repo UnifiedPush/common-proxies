@@ -16,7 +16,7 @@ func (Gotify) Path() string {
 	return "/UP"
 }
 
-func (g Gotify) Req(body []byte, req http.Request) (newReq *http.Request, err error) {
+func (g Gotify) Req(body []byte, req http.Request) (*http.Request, *utils.ProxyError) {
 
 	url := *req.URL
 	url.Scheme = g.Scheme
@@ -29,20 +29,19 @@ func (g Gotify) Req(body []byte, req http.Request) (newReq *http.Request, err er
 		Message: string(body),
 	})
 	if err != nil {
-		fmt.Println(err)
-		return
+		return nil, utils.NewProxyError(502, err)
 	}
 
-	newReq, err = http.NewRequest(req.Method, url.String(), newBody)
+	newReq, err := http.NewRequest(req.Method, url.String(), newBody)
 
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, utils.NewProxyError(502, err) //TODO refine err codes
 	}
 	//newReq.Header = req.Header
 	newReq.Header.Set("Content-Type", "application/json")
 
-	return
+	return newReq, nil
 }
 
 func (g Gotify) RespCode(resp *http.Response) int {
