@@ -46,5 +46,5 @@ func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 }
 
 func MatrixResp(r *http.Response) {
-	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{}`))
+	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{"rejected":[]}`))
 }
