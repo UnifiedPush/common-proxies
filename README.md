@@ -1,20 +1,27 @@
 # Go UnifiedPush Rewrite Proxy
 
 ## Installing
-1. Download the binary and [example config file](./config.toml) onto your server
-2. Use the following nginx config, or the equivalent for your reverse proxy.
+
+1. Download the binary and [example config file](./example-config.toml) onto your server
+. Place the [systemd service file](./up-rewrite-proxy.service) in /etc/systemd/system/up-rewrite-proxy.service . Make sure to edit the contents of the file.
+1. `systemctl enable --now up-rewrite-proxy`
+1. Install the [reverse-proxy](#reverse-proxy)
+
+### Docker
+1. Get the [example config file](./example-config.toml) onto your server
+1. Run `docker run -p 5000:5000 -v \`pwd\`/config.toml:/app/config.toml:ro unifiedpush/common-proxies`. While changing parameters like the port and the config file location to the appropriate values.
+1. Install the [reverse-proxy](#reverse-proxy)
+
+
+### Reverse Proxy
+
+Use the following nginx config, or the equivalent for your reverse proxy.
 ```nginx 
 location ~ ^/(FCM|UP|_matrix) {    
         proxy_pass            http://127.0.0.1:5000;
 }
 ```
 The values FCM, UP, etc will depend on which ones you actually have enabled. The :5000 will be the port you specify to the listen directive in the config file.
-
-3. Place the [systemd service file](./up-rewrite-proxy.service) in /etc/systemd/system/up-rewrite-proxy.service . Make sure to edit the contents of the file.
-
-4. `systemctl enable --now up-rewrite-proxy`
-
-5. You're done!
 
 
 ## Rewrite Proxy
