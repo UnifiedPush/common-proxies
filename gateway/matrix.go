@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/karmanyaahm/up_rewrite/utils"
@@ -33,17 +32,33 @@ func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, *utils.Prox
 	if !(len(pkStruct.Notification.Devices) > 0) {
 		return nil, utils.NewProxyError(400, errors.New("Gateway URL"))
 	}
-	pushKey := pkStruct.Notification.Devices[0].PushKey
 
-	newReq, err := http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
-	if err != nil {
-		return nil, utils.NewProxyError(502, err) //TODO
+	reqs := []*http.Request{}
+
+	for _, i := range pkStruct.Notification.Devices {
+		newReq, err := http.NewRequest(http.MethodPost, i.PushKey, bytes.NewReader(body))
+		if err != nil {
+			return nil, utils.NewProxyError(502, err) //TODO
+		}
+		reqs = append(reqs, newReq)
 	}
 
-	newReq.Header.Set("Content-Type", "application/json")
-	return []*http.Request{newReq}, nil
+	return reqs, nil
 }
 
-func (Matrix) Resp(r *http.Response) {
-	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{}`))
+func (Matrix) Resp(r []*http.Response, w http.ResponseWriter) {
+	rejects := struct {
+		Rej []string `json:"rejected"`
+	}{}
+	for _, i := range r {
+		if i.StatusCode == 404 {
+			rejects.Rej = append(rejects.Rej, i.Request.URL.String())
+		}
+	}
+
+	b, err := json.Marshal(rejects)
+	if err != nil {
+		w.WriteHeader(502) //TODO
+	}
+	w.Write(b)
 }

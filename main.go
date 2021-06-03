@@ -13,46 +13,26 @@ import (
 
 	"github.com/karmanyaahm/up_rewrite/config"
 	. "github.com/karmanyaahm/up_rewrite/config"
-	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-var configFile = flag.String("conf", "config.toml", "path to toml file for config")
-
-type HttpHandler func(http.ResponseWriter, *http.Request)
-type Gateway interface {
-	Handler
-	Get() []byte
-	Resp(*http.Response)
-	Req([]byte, http.Request) ([]*http.Request, *utils.ProxyError)
-}
-
-type Proxy interface {
-	Handler
-	RespCode(*http.Response) int
-	Req([]byte, http.Request) (*http.Request, *utils.ProxyError)
-}
-
-type Handler interface {
-	Path() string
-}
+var configFile = flag.String("c", "config.toml", "path to toml file for config")
 
 // various translaters
 var handlers = []Handler{}
 
-func init() {
+func main() {
 	Config = ParseConf(*configFile)
 	if Config == nil {
 		os.Exit(1)
 	}
-}
-
-func main() {
-	myRouter := http.NewServeMux()
 	handlers = []Handler{
 		Config.Rewrite.Gotify,
 		Config.Rewrite.FCM,
 		Config.Gateway.Matrix,
 	}
+
+	myRouter := http.NewServeMux()
+
 	for _, i := range handlers {
 		if !reflect.ValueOf(i).IsNil() {
 			myRouter.HandleFunc(i.Path(), handle(i))
@@ -106,12 +86,11 @@ func main() {
 
 }
 
-//function that runs on (almost) every http request
 func handle(handler Handler) HttpHandler {
 	if h, ok := handler.(Gateway); ok {
-		return gatewayHandler(h)
+		return bothHandler(gatewayHandler(h))
 	} else if h, ok := handler.(Proxy); ok {
-		return proxyHandler(h)
+		return bothHandler(proxyHandler(h))
 	} else {
 		//should be const so np abt fatal
 		log.Fatalf("UNABLE TO HANDLE HANDLER %#v\n", handler)

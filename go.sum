@@ -4,6 +4,8 @@ github.com/hakobe/paranoidhttp v0.2.0 h1:0UPuT7Vo4jkoGSJCOnPWSDc4V05q/7Q15i9N81/
 github.com/hakobe/paranoidhttp v0.2.0/go.mod h1:f9cFbB2hM4ZcEgWu0zw9+hjzk5kG/Ys8jxEmyMBBeqk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc h1:qqbeoQ7wVR5NFIGyJdz/PQjuCBzpg8GxOaF0HWivFMk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc/go.mod h1:wLcNqnyr6riTbnFObg4o2/GemTCso9AnsUdLsMsdspw=
+github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
+github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,6 +13,7 @@ import (
 	. "github.com/karmanyaahm/up_rewrite/config"
 )
 
+//function that runs on (almost) every http request
 func bothHandler(f HttpHandler) HttpHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ConfigLock.RLock()
@@ -40,32 +40,27 @@ func gatewayHandler(h Gateway) HttpHandler {
 			body, err := io.ReadAll(io.LimitReader(r.Body, 20000))
 			r.Body.Close()
 
-			req, err := h.Req(body, *r)
+			reqs, err := h.Req(body, *r)
 
 			if err != nil {
 				errHandle(err, w)
 				respType = "err"
 				break
 			}
-			resp, err := client.Do(req[0])
-			if errHandle(err, w) {
-				return
+
+			resps := make([]*http.Response, len(reqs))
+			for i, req := range reqs {
+				CheckIfRewriteProxy(req.URL.String(), client)
+				resps[i], err = client.Do(req)
+				//				if errHandle(err, w) {
+				//			} //TODO proper err handle
+				if err != nil {
+					resps[i] = nil
+				}
 			}
 
 			//process resp
-			h.Resp(resp)
-			defer resp.Body.Close()
-			//start forwarding resp
-			body, err = ioutil.ReadAll(resp.Body)
-			if errHandle(err, w) {
-				return
-			}
-
-			w.WriteHeader(resp.StatusCode)
-			_, err = w.Write(body)
-			if errHandle(err, w) {
-				return
-			}
+			h.Resp(resps, w)
 			respType = "forward"
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
