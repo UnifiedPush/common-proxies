@@ -12,5 +12,5 @@ type ProxyError struct {
 }
 
 func (p *ProxyError) Error() string {
-	return fmt.Sprintf("Error proxying connection: %d because: ", p.Code, p.s.Error())
+	return fmt.Sprintf("Error proxying connection: %d because: %s", p.Code, p.s.Error())
 }

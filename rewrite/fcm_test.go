@@ -11,7 +11,7 @@ import (
 )
 
 func TestFCMConv(t *testing.T) {
-	fcm := FCM{"testkey"}
+	fcm := FCM{Key: "testkey"}
 
 	request := httptest.NewRequest("POST", "/FCM?token=a", bytes.NewBufferString("content"))
 	newReq, err := fcm.Req([]byte("content"), *request)

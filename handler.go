@@ -108,6 +108,7 @@ func proxyHandler(h Proxy) HttpHandler {
 				respType = "err"
 				break
 			}
+
 			resp, err := client.Do(req)
 			if errHandle(err, w) {
 				respType = "err"

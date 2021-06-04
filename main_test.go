@@ -6,23 +6,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/karmanyaahm/up_rewrite/config"
 	"github.com/karmanyaahm/up_rewrite/rewrite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	config.Config.Verbose = true
+}
 func TestIntegrationFCM(t *testing.T) {
 	fcm := rewrite.FCM{Key: "testkey"}
-	handler := handle(fcm)
+	handler := handle(&fcm)
 
 	request := httptest.NewRequest("POST", "/FCM?token=a", bytes.NewBufferString("content"))
 
 	resp := httptest.NewRecorder()
 	var call *http.Request
-	var ts *httptest.Server
-	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		call = r
-		ts.Close()
+		w.WriteHeader(200)
 	}))
 	fcm.APIURL = ts.URL
 
