@@ -3,8 +3,11 @@ package config
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/karmanyaahm/up_rewrite/gateway"
@@ -12,7 +15,7 @@ import (
 	"github.com/komkom/toml"
 )
 
-var Config *Configuration
+var Config Configuration
 var ConfigLock sync.RWMutex
 
 type Configuration struct {
@@ -29,27 +32,27 @@ type Configuration struct {
 	}
 }
 
-func ParseConf(location string) *Configuration {
+func ParseConf(location string) error {
 	ConfigLock.Lock()
 	defer ConfigLock.Unlock()
 
 	config := Configuration{}
 	b, err := ioutil.ReadFile(location)
 	if err != nil {
-		log.Println("Unable to find", location, "exiting...")
-		return nil
+		return errors.New(fmt.Sprint("Unable to find", location, "exiting..."))
 	}
 	b, err = ioutil.ReadAll(toml.New(bytes.NewReader(b)))
 	err = json.Unmarshal(b, &config)
 	if err != nil {
-		log.Println("Error parsing config file exiting...", err)
-		return nil
+		return errors.New(fmt.Sprint("Error parsing config file exiting...", err))
 	}
 
 	if defaults(&config) {
-		return nil
+		os.Exit(1)
 	}
-	return &config
+	log.Println("Loading new config")
+	Config = config
+	return nil
 }
 
 func defaults(c *Configuration) (failed bool) {
@@ -71,6 +74,7 @@ func defaults(c *Configuration) (failed bool) {
 			log.Println("FCM Key cannot be empty")
 			failed = true
 		}
+		f.APIURL = "https://fcm.googleapis.com/fcm/send"
 	}
 
 	m := c.Gateway.Matrix

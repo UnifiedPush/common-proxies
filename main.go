@@ -21,10 +21,11 @@ var configFile = flag.String("c", "config.toml", "path to toml file for config")
 var handlers = []Handler{}
 
 func main() {
-	Config = ParseConf(*configFile)
-	if Config == nil {
-		os.Exit(1)
+	err := ParseConf(*configFile)
+	if err != nil {
+		log.Fatalln(err)
 	}
+
 	handlers = []Handler{
 		Config.Rewrite.Gotify,
 		Config.Rewrite.FCM,
@@ -56,8 +57,10 @@ func main() {
 		for {
 			switch <-quit {
 			case syscall.SIGHUP:
-				config.ParseConf(*configFile)
-				log.Println("Reloading conf")
+				err := config.ParseConf(*configFile)
+				if err != nil {
+					log.Println("Unable to reload config: ", err)
+				}
 			case os.Interrupt:
 				log.Println("Server is shutting down...")
 

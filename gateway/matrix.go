@@ -20,7 +20,7 @@ func (m Matrix) Get() []byte {
 	return []byte(`{"gateway":"matrix","unifiedpush":{"gateway":"matrix"}}`)
 }
 
-func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, *utils.ProxyError) {
+func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	pkStruct := struct {
 		Notification struct {
 			Devices []struct {
@@ -38,7 +38,7 @@ func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, *utils.Prox
 	for _, i := range pkStruct.Notification.Devices {
 		newReq, err := http.NewRequest(http.MethodPost, i.PushKey, bytes.NewReader(body))
 		if err != nil {
-			return nil, utils.NewProxyError(502, err) //TODO
+			return nil, err //TODO
 		}
 		reqs = append(reqs, newReq)
 	}

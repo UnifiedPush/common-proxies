@@ -8,20 +8,23 @@ import (
 )
 
 type FCM struct {
-	Key string
+	Key    string
+	APIURL string
 }
 
 func (FCM) Path() string {
 	return "/FCM"
 }
 
-func (f FCM) Req(body []byte, req http.Request) (*http.Request, *utils.ProxyError) {
+type fcmData struct {
+	To   string            `json:"to"`
+	Data map[string]string `json:"data"`
+}
+
+func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	token := req.URL.Query().Get("token")
 
-	newBody, err := utils.EncodeJSON(struct {
-		To   string            `json:"to"`
-		Data map[string]string `json:"data"`
-	}{
+	newBody, err := utils.EncodeJSON(fcmData{
 		To: token,
 		Data: map[string]string{
 			"body": string(body),
@@ -29,16 +32,21 @@ func (f FCM) Req(body []byte, req http.Request) (*http.Request, *utils.ProxyErro
 	})
 	if err != nil {
 		fmt.Println(err)
-		return nil, utils.NewProxyError(502, err) //TODO
+		return nil, err //TODO
 	}
 
-	newReq, err := http.NewRequest(http.MethodPost, "https://fcm.googleapis.com/fcm/send", newBody)
+	newReq, err := http.NewRequest(http.MethodPost, f.APIURL, newBody)
 	if err != nil {
-		return nil, utils.NewProxyError(502, err)
+		return nil, err
 	}
 
 	newReq.Header.Set("Content-Type", "application/json")
 	newReq.Header.Set("Authorization", "key="+f.Key)
 
 	return newReq, nil
+}
+
+func (f FCM) RespCode(resp *http.Response) int {
+	return 202
+	//TODO https://firebase.google.com/docs/cloud-messaging/http-server-ref?authuser=0#error-codes
 }
