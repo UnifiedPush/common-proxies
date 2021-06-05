@@ -1,10 +1,6 @@
 BUILD_DIR=./bin
-VERSION=`git describe --tags`
-
-# pass -e DOCKER_OUTPUT=registry to make to push images
-DOCKER_OUTPUT ?= local
-
 DOCKER_CMD=docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15
+
 local:
 	go build -o up-rewrite
 local-docker:
