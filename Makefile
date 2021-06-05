@@ -14,7 +14,7 @@ all-docker:
 	$(DOCKER_CMD) make all	
 
 test: local
-	go test ./...  # no tests yet defined as of writing this
+	go test ./...  
 test-docker:
 	$(DOCKER_CMD) go test ./...
 

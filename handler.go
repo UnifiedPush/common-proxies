@@ -14,6 +14,7 @@ import (
 	phttp "github.com/hakobe/paranoidhttp"
 
 	. "github.com/karmanyaahm/up_rewrite/config"
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 //function that runs on (almost) every http request
@@ -150,17 +151,18 @@ func proxyHandler(h Proxy) HttpHandler {
 
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
-		if e.Error() == "length" {
-			if Config.Verbose {
-				log.Println("Too long request")
-			}
+		if err, ok := e.(utils.ProxyError); ok {
+			logV(err.S.Error())
+			w.WriteHeader(err.Code)
+			return true
+
+		} else if e.Error() == "length" {
+			logV("Too long request")
 			w.WriteHeader(http.StatusRequestEntityTooLarge)
 			return true
 
 		} else if e.Error() == "Gateway URL" {
-			if Config.Verbose {
-				log.Println("Unknown URL to forward Gateway request to")
-			}
+			logV("Unknown URL to forward Gateway request to")
 			w.WriteHeader(http.StatusBadRequest)
 			return true
 		} else {
@@ -173,4 +175,10 @@ func errHandle(e error, w http.ResponseWriter) bool {
 		}
 	}
 	return false
+}
+
+func logV(args ...interface{}) {
+	if Config.Verbose {
+		log.Println(args...)
+	}
 }

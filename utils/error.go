@@ -7,10 +7,10 @@ func NewProxyError(code int, err error) *ProxyError {
 }
 
 type ProxyError struct {
-	s    error
+	S    error
 	Code int
 }
 
-func (p *ProxyError) Error() string {
-	return fmt.Sprintf("Error proxying connection: %d because: %s", p.Code, p.s.Error())
+func (p ProxyError) Error() string {
+	return fmt.Sprintf("Error proxying connection: %d because: %s", p.Code, p.S.Error())
 }
