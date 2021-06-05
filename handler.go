@@ -5,10 +5,12 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/hakobe/paranoidhttp"
 	phttp "github.com/hakobe/paranoidhttp"
 
 	. "github.com/karmanyaahm/up_rewrite/config"
@@ -24,7 +26,17 @@ func bothHandler(f HttpHandler) HttpHandler {
 }
 
 func gatewayHandler(h Gateway) HttpHandler {
-	client, _, _ := phttp.NewClient()
+	opts := []paranoidhttp.Option{}
+
+	for _, i := range Config.Gateway.AllowedIPs {
+		_, n, err := net.ParseCIDR(i)
+		if err != nil {
+			log.Fatal("error parsing permitted IPs", err)
+		}
+		opts = append(opts, paranoidhttp.PermittedIPNets(n))
+	}
+
+	client, _, _ := phttp.NewClient(opts...)
 	client.Timeout = 10 * time.Second
 	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
 		return errors.New("NO")
@@ -57,6 +69,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 				//			} //TODO proper err handle
 				if err != nil {
 					resps[i] = nil
+					log.Println(err)
 				}
 			}
 

@@ -23,7 +23,8 @@ type Configuration struct {
 	Verbose    bool
 
 	Gateway struct {
-		Matrix *gateway.Matrix
+		AllowedIPs []string
+		Matrix     *gateway.Matrix
 	}
 
 	Rewrite struct {
