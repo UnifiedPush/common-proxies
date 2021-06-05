@@ -5,6 +5,8 @@ verbose = true
 
 # you can comment out categories to disable the endpoint
 [gateway]
+   
+  #AllowedIPs = ["127.0.0.1/32"] # if internal ips need to be allowed to gateway to. Use this with caution and only allow as few IPs as required. All public IPv4 addresses are allowed by default.
   [gateway.matrix] # takes no params but this needs to be declared to enable the endpoint
 
 [rewrite]
