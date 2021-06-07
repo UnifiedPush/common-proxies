@@ -23,3 +23,12 @@ func Min(i, j int) (k int) {
 	}
 	return
 }
+
+func InStringSlice(ar []string, s string) bool {
+	for _, i := range ar {
+		if s == i {
+			return true
+		}
+	}
+	return false
+}

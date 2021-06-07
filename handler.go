@@ -5,17 +5,34 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/hakobe/paranoidhttp"
 	phttp "github.com/hakobe/paranoidhttp"
 
+	"github.com/karmanyaahm/up_rewrite/config"
 	. "github.com/karmanyaahm/up_rewrite/config"
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
+
+var normalClient *http.Client
+var paranoidClient *http.Client
+
+func init() {
+	paranoidClient, _, _ = phttp.NewClient()
+	paranoidClient.Timeout = 10 * time.Second
+	paranoidClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return errors.New("NO")
+	}
+
+	normalClient = &http.Client{
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return errors.New("NO")
+		},
+		Timeout: 2 * time.Second,
+	}
+}
 
 //function that runs on (almost) every http request
 func bothHandler(f HttpHandler) HttpHandler {
@@ -27,21 +44,6 @@ func bothHandler(f HttpHandler) HttpHandler {
 }
 
 func gatewayHandler(h Gateway) HttpHandler {
-	opts := []paranoidhttp.Option{}
-
-	for _, i := range Config.Gateway.AllowedIPs {
-		_, n, err := net.ParseCIDR(i)
-		if err != nil {
-			log.Fatal("error parsing permitted IPs", err)
-		}
-		opts = append(opts, paranoidhttp.PermittedIPNets(n))
-	}
-
-	client, _, _ := phttp.NewClient(opts...)
-	client.Timeout = 10 * time.Second
-	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return errors.New("NO")
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		var nread, nwritten int
 		var respType string
@@ -50,8 +52,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 		case http.MethodGet:
 			w.Write(h.Get())
 		case http.MethodPost:
-			//read upto 20,000 should be enough for any gateway
-			body, err := ioutil.ReadAll(io.LimitReader(r.Body, 20000))
+			body, err := ioutil.ReadAll(io.LimitReader(r.Body, 4005))
 			r.Body.Close()
 
 			reqs, err := h.Req(body, *r)
@@ -64,10 +65,14 @@ func gatewayHandler(h Gateway) HttpHandler {
 
 			resps := make([]*http.Response, len(reqs))
 			for i, req := range reqs {
-				CheckIfRewriteProxy(req.URL.String(), client)
-				resps[i], err = client.Do(req)
-				//				if errHandle(err, w) {
-				//			} //TODO proper err handle
+				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
+					CheckIfRewriteProxy(req.URL.String(), normalClient)
+					resps[i], err = normalClient.Do(req)
+				} else {
+					CheckIfRewriteProxy(req.URL.String(), paranoidClient)
+					resps[i], err = paranoidClient.Do(req)
+				}
+
 				if err != nil {
 					resps[i] = nil
 					log.Println(err)
@@ -91,12 +96,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 }
 
 func proxyHandler(h Proxy) HttpHandler {
-	client := &http.Client{
-		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return errors.New("NO")
-		},
-		Timeout: 2 * time.Second,
-	}
+
 	versionWrite := versionHandler()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var nread, code int = 0, 200
@@ -124,7 +124,7 @@ func proxyHandler(h Proxy) HttpHandler {
 				break
 			}
 
-			resp, err := client.Do(req)
+			resp, err := normalClient.Do(req)
 			if errHandle(err, w) {
 				respType = "err"
 				break
