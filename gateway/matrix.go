@@ -4,22 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
+
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
-	if req.Method == http.MethodGet {
-		content := []byte(`{"gateway":"matrix"}`)
-		defaultResp = &http.Response{
-			Body: ioutil.NopCloser(bytes.NewReader(content)),
-		}
-		defaultResp.StatusCode = http.StatusOK
+type Matrix struct {
+}
 
-		return
-	}
+func (m Matrix) Path() string {
+	return "/_matrix/push/v1/notify"
+}
 
+func (m Matrix) Get() []byte {
+	return []byte(`{"gateway":"matrix","unifiedpush":{"gateway":"matrix"}}`)
+}
+
+func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	pkStruct := struct {
 		Notification struct {
 			Devices []struct {
@@ -29,22 +30,35 @@ func Matrix(body []byte, req http.Request) (newReq *http.Request, defaultResp *h
 	}{}
 	json.Unmarshal(body, &pkStruct)
 	if !(len(pkStruct.Notification.Devices) > 0) {
-		return nil, nil, errors.New("Gateway URL")
-	}
-	pushKey := pkStruct.Notification.Devices[0].PushKey
-
-	newReq, err = http.NewRequest(req.Method, pushKey, bytes.NewReader(body))
-	if err != nil {
-		fmt.Println(err)
-		newReq = nil
-		return
+		return nil, utils.NewProxyError(400, errors.New("Gateway URL"))
 	}
 
-	//newReq.Header = req.Header
-	newReq.Header.Set("Content-Type", "application/json")
-	return
+	reqs := []*http.Request{}
+
+	for _, i := range pkStruct.Notification.Devices {
+		newReq, err := http.NewRequest(http.MethodPost, i.PushKey, bytes.NewReader(body))
+		if err != nil {
+			return nil, err //TODO
+		}
+		reqs = append(reqs, newReq)
+	}
+
+	return reqs, nil
 }
 
-func MatrixResp(r *http.Response) {
-	r.Body = ioutil.NopCloser(bytes.NewBufferString(`{"rejected":[]}`))
+func (Matrix) Resp(r []*http.Response, w http.ResponseWriter) {
+	rejects := struct {
+		Rej []string `json:"rejected"`
+	}{}
+	for _, i := range r {
+		if i != nil && i.StatusCode == 404 {
+			rejects.Rej = append(rejects.Rej, i.Request.URL.String())
+		}
+	}
+
+	b, err := json.Marshal(rejects)
+	if err != nil {
+		w.WriteHeader(502) //TODO
+	}
+	w.Write(b)
 }

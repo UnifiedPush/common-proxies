@@ -5,6 +5,11 @@ verbose = true
 
 # you can comment out categories to disable the endpoint
 [gateway]
+  #                  non default https and http ports             default 80 and 443 
+  # AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",  "myinternaldomain.local"] 
+  # if internal hosts need to be allowed to gateway to. Use this with caution and only allow as few hosts as required, if any. All public IPv4 addresses are allowed by default. 
+  # This takes in "<host>" if the default port for HTTP and/or HTTPS is expected or "<host>:<port>" if not.
+  # The <host> can also be an ip if such a request is expected (probably shouldn't be for most setups).
   [gateway.matrix] # takes no params but this needs to be declared to enable the endpoint
 
 [rewrite]
@@ -13,5 +18,5 @@ verbose = true
   # key = ""  #Firebase server key - See docs for more info
 
   [rewrite.gotify]
-    address = "localhost:8000" #What hostname:port is gotify on
+    address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443
     scheme = "https" #http or https

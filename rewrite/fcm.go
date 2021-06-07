@@ -1,43 +1,55 @@
 package rewrite
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
-	. "github.com/karmanyaahm/up_rewrite/config"
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-func FCM(body []byte, req http.Request) (newReq *http.Request, defaultResp *http.Response, err error) {
+type FCM struct {
+	Key    string
+	APIURL string
+}
+
+func (FCM) Path() string {
+	return "/FCM"
+}
+
+type fcmData struct {
+	To       string            `json:"to"`
+	Data     map[string]string `json:"data"`
+	Instance string            `json:"instance"`
+}
+
+func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	token := req.URL.Query().Get("token")
+	instance := req.URL.Query().Get("instance")
 
-	if len(body) > 1024*4-4 {
-		return nil, nil, errors.New("length")
-	}
-
-	newBody, err := utils.EncodeJSON(struct {
-		To   string            `json:"to"`
-		Data map[string]string `json:"data"`
-	}{
+	newBody, err := utils.EncodeJSON(fcmData{
 		To: token,
 		Data: map[string]string{
 			"body": string(body),
 		},
+		Instance: instance,
 	})
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, err //TODO
 	}
 
-	newReq, err = http.NewRequest(req.Method, "https://fcm.googleapis.com/fcm/send", newBody)
-
-	//for n, h := range req.Header {
-	//	newReq.Header[n] = h
-	//}
+	newReq, err := http.NewRequest(http.MethodPost, f.APIURL, newBody)
+	if err != nil {
+		return nil, err
+	}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+Config.Rewrite.FCM.Key)
+	newReq.Header.Set("Authorization", "key="+f.Key)
 
-	return
+	return newReq, nil
+}
+
+func (f FCM) RespCode(resp *http.Response) int {
+	return 202
+	//TODO https://firebase.google.com/docs/cloud-messaging/http-server-ref?authuser=0#error-codes
 }
