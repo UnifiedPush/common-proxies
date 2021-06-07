@@ -17,18 +17,21 @@ func (FCM) Path() string {
 }
 
 type fcmData struct {
-	To   string            `json:"to"`
-	Data map[string]string `json:"data"`
+	To       string            `json:"to"`
+	Data     map[string]string `json:"data"`
+	Instance string            `json:"instance"`
 }
 
 func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	token := req.URL.Query().Get("token")
+	instance := req.URL.Query().Get("instance")
 
 	newBody, err := utils.EncodeJSON(fcmData{
 		To: token,
 		Data: map[string]string{
 			"body": string(body),
 		},
+		Instance: instance,
 	})
 	if err != nil {
 		fmt.Println(err)

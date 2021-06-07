@@ -51,7 +51,7 @@ func (Matrix) Resp(r []*http.Response, w http.ResponseWriter) {
 		Rej []string `json:"rejected"`
 	}{}
 	for _, i := range r {
-		if i.StatusCode == 404 {
+		if i != nil && i.StatusCode == 404 {
 			rejects.Rej = append(rejects.Rej, i.Request.URL.String())
 		}
 	}

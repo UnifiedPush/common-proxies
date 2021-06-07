@@ -30,6 +30,7 @@ func versionHandler() func(http.ResponseWriter) {
 var allowedProxies *cache.Cache
 
 func init() {
+	//             default cache - if allowed, check every interval
 	allowedProxies = cache.New(10*time.Minute, 2*time.Minute)
 }
 
