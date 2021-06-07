@@ -30,10 +30,6 @@ type RewriteTests struct {
 	ts       *httptest.Server
 }
 
-func (s *RewriteTests) SetupSuite() {
-	config.Config.Gateway.AllowedIPs = []string{"127.0.0.1/32"}
-}
-
 func (s *RewriteTests) SetupTest() {
 	s.ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Call = r
@@ -41,6 +37,8 @@ func (s *RewriteTests) SetupTest() {
 		w.WriteHeader(200)
 	}))
 
+	u, _ := url.Parse(s.ts.URL)
+	config.Config.Gateway.AllowedHosts = []string{u.Host}
 	s.Resp = httptest.NewRecorder()
 }
 
