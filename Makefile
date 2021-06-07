@@ -20,9 +20,8 @@ test-docker:
 
 # check out this if the cross-docker things don't work https://stackoverflow.com/a/65371609/8919142
 prep-build:
-	cp .gitignore .dockerignore
 	sed 's/127.0.0.1/0.0.0.0/' example-config.toml > config.toml # very very stopgap solution until env vars config works
 build-local: prep-build
 	docker build . -t unifiedpush/common-proxies:testing
-	rm .dockerignore config.toml
+	rm config.toml
 
