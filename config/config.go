@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/karmanyaahm/up_rewrite/gateway"
@@ -23,8 +24,8 @@ type Configuration struct {
 	Verbose    bool
 
 	Gateway struct {
-		AllowedIPs []string
-		Matrix     *gateway.Matrix
+		AllowedHosts []string
+		Matrix       *gateway.Matrix
 	}
 
 	Rewrite struct {
@@ -63,9 +64,11 @@ func defaults(c *Configuration) (failed bool) {
 			log.Println("Gotify Address cannot be empty")
 			failed = true
 		}
-		if !(g.Scheme == "http" || c.Rewrite.Gotify.Scheme == "https") {
-			g.Scheme = "https"
-			log.Println("Warn: Gotify Scheme incorrect")
+
+		g.Scheme = strings.ToLower(g.Scheme)
+		if !(g.Scheme == "http" || g.Scheme == "https") {
+			log.Println("Gotify Scheme incorrect")
+			failed = true
 		}
 	}
 

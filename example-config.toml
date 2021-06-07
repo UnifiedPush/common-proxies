@@ -5,8 +5,11 @@ verbose = true
 
 # you can comment out categories to disable the endpoint
 [gateway]
-   
-  #AllowedIPs = ["127.0.0.1/32"] # if internal ips need to be allowed to gateway to. Use this with caution and only allow as few IPs as required. All public IPv4 addresses are allowed by default.
+  #                  non default https and http ports             default 80 and 443 
+  # AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",  "myinternaldomain.local"] 
+  # if internal hosts need to be allowed to gateway to. Use this with caution and only allow as few hosts as required, if any. All public IPv4 addresses are allowed by default. 
+  # This takes in "<host>" if the default port for HTTP and/or HTTPS is expected or "<host>:<port>" if not.
+  # The <host> can also be an ip if such a request is expected (probably shouldn't be for most setups).
   [gateway.matrix] # takes no params but this needs to be declared to enable the endpoint
 
 [rewrite]
