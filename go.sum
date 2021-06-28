@@ -2,6 +2,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/hakobe/paranoidhttp v0.2.0 h1:0UPuT7Vo4jkoGSJCOnPWSDc4V05q/7Q15i9N81/0asE=
 github.com/hakobe/paranoidhttp v0.2.0/go.mod h1:f9cFbB2hM4ZcEgWu0zw9+hjzk5kG/Ys8jxEmyMBBeqk=
+github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56 h1:hFVkLRVbV5WEXdoTDjBj7kR59WA1FFVhs4qBUyRthDc=
+github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56/go.mod h1:f9cFbB2hM4ZcEgWu0zw9+hjzk5kG/Ys8jxEmyMBBeqk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc h1:qqbeoQ7wVR5NFIGyJdz/PQjuCBzpg8GxOaF0HWivFMk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc/go.mod h1:wLcNqnyr6riTbnFObg4o2/GemTCso9AnsUdLsMsdspw=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=

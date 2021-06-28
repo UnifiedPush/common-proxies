@@ -9,7 +9,7 @@
 
 ### Docker
 1. Get the [example config file](./example-config.toml) onto your server
-1. Run `docker run -p 5000:5000 -v \`pwd\`/config.toml:/app/config.toml:ro unifiedpush/common-proxies`. While changing parameters like the port and the config file location to the appropriate values.
+1. Run `docker run -p 5000:5000 -v $PWD/config.toml:/app/config.toml:ro unifiedpush/common-proxies`. While changing parameters like the port and the config file location to the appropriate values.
 1. Install the [reverse-proxy](#reverse-proxy)
 
 
@@ -34,7 +34,6 @@ This is meant to be hosted by the app developers or someone who has access to th
 This is primarily meant to be hosted on the same machine as the Gotify server. Running it on a different machine hasn't been tested yet but you can share information about that in this repo's issues.
 
 ## Gateway
-Note: Gateways cannot connect to localhost or other private IPs. IPv6 support missing is a known bug.
 
 ### Matrix
 Gateways matrix push until [MSC 2970](https://github.com/matrix-org/matrix-doc/pull/2970) is accepted.  
