@@ -49,7 +49,7 @@ func (s *RewriteTests) TearDownTest() {
 func (s *RewriteTests) TestFCM() {
 	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL}
 
-	request := httptest.NewRequest("POST", "/FCM?token=a", bytes.NewBufferString("content"))
+	request := httptest.NewRequest("POST", "/?token=a", bytes.NewBufferString("content"))
 	handle(&fcm)(s.Resp, request)
 
 	//resp
@@ -65,7 +65,7 @@ func (s *RewriteTests) TestGotify() {
 	testurl, _ := url.Parse(s.ts.URL)
 	gotify := rewrite.Gotify{Address: testurl.Host, Scheme: testurl.Scheme}
 
-	request := httptest.NewRequest("POST", "/UP?token=a", bytes.NewBufferString("content"))
+	request := httptest.NewRequest("POST", "/?token=a", bytes.NewBufferString("content"))
 	handle(&gotify)(s.Resp, request)
 
 	//resp
@@ -82,7 +82,7 @@ func (s *RewriteTests) TestMatrixSend() {
 	matrix := gateway.Matrix{}
 
 	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}]}}`
-	request := httptest.NewRequest("POST", "/UP?token=a", bytes.NewBufferString(content))
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
 	//resp
