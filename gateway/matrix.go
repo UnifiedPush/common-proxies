@@ -10,10 +10,14 @@ import (
 )
 
 type Matrix struct {
+	Enabled bool `env:"UP_GATEWAY_MATRIX_ENABLE"`
 }
 
 func (m Matrix) Path() string {
-	return "/_matrix/push/v1/notify"
+	if m.Enabled {
+		return "/_matrix/push/v1/notify"
+	}
+	return ""
 }
 
 func (m Matrix) Get() []byte {
@@ -61,4 +65,8 @@ func (Matrix) Resp(r []*http.Response, w http.ResponseWriter) {
 		w.WriteHeader(502) //TODO
 	}
 	w.Write(b)
+}
+
+func (m *Matrix) Defaults() (failed bool) {
+	return
 }

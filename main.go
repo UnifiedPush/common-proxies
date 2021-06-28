@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
 	"syscall"
 	"time"
 
@@ -27,15 +26,15 @@ func main() {
 	}
 
 	handlers = []Handler{
-		Config.Rewrite.Gotify,
-		Config.Rewrite.FCM,
-		Config.Gateway.Matrix,
+		&Config.Rewrite.Gotify,
+		&Config.Rewrite.FCM,
+		&Config.Gateway.Matrix,
 	}
 
 	myRouter := http.NewServeMux()
 
 	for _, i := range handlers {
-		if !reflect.ValueOf(i).IsNil() {
+		if i.Path() != "" {
 			myRouter.HandleFunc(i.Path(), handle(i))
 		}
 	}

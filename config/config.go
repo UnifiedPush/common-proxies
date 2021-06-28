@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 	"sync"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/karmanyaahm/up_rewrite/gateway"
 	"github.com/karmanyaahm/up_rewrite/rewrite"
 	"github.com/komkom/toml"
@@ -20,17 +20,17 @@ var Config Configuration
 var ConfigLock sync.RWMutex
 
 type Configuration struct {
-	ListenAddr string
-	Verbose    bool
+	ListenAddr string `env:"UP_LISTEN"`
+	Verbose    bool   `env:"UP_VERBOSE"`
 
 	Gateway struct {
-		AllowedHosts []string
-		Matrix       *gateway.Matrix
+		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
+		Matrix       gateway.Matrix
 	}
 
 	Rewrite struct {
-		FCM    *rewrite.FCM
-		Gotify *rewrite.Gotify
+		FCM    rewrite.FCM
+		Gotify rewrite.Gotify
 	}
 }
 
@@ -49,6 +49,10 @@ func ParseConf(location string) error {
 		return errors.New(fmt.Sprint("Error parsing config file exiting...", err))
 	}
 
+	if err := env.Parse(&config); err != nil {
+		return errors.New(fmt.Sprint("Error parsing config file exiting...", err))
+	}
+
 	if defaults(&config) {
 		os.Exit(1)
 	}
@@ -58,32 +62,7 @@ func ParseConf(location string) error {
 }
 
 func defaults(c *Configuration) (failed bool) {
-	g := c.Rewrite.Gotify
-	if g != nil {
-		if len(g.Address) == 0 {
-			log.Println("Gotify Address cannot be empty")
-			failed = true
-		}
-
-		g.Scheme = strings.ToLower(g.Scheme)
-		if !(g.Scheme == "http" || g.Scheme == "https") {
-			log.Println("Gotify Scheme incorrect")
-			failed = true
-		}
-	}
-
-	f := c.Rewrite.FCM
-	if f != nil {
-		if len(f.Key) == 0 {
-			log.Println("FCM Key cannot be empty")
-			failed = true
-		}
-		f.APIURL = "https://fcm.googleapis.com/fcm/send"
-	}
-
-	m := c.Gateway.Matrix
-	if m != nil {
-	}
-	return
-
+	return c.Rewrite.Gotify.Defaults() ||
+		c.Rewrite.FCM.Defaults() ||
+		c.Gateway.Matrix.Defaults()
 }

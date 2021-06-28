@@ -21,4 +21,5 @@ type Proxy interface {
 
 type Handler interface {
 	Path() string
+	Defaults() (failed bool)
 }
