@@ -8,3 +8,5 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.7.0
 )
+
+replace github.com/hakobe/paranoidhttp => github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56
