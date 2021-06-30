@@ -7,11 +7,13 @@
 1. `systemctl enable --now up-rewrite-proxy`
 1. Install the [reverse-proxy](#reverse-proxy)
 
+### Docker-Compose with Gotify quick start
+There's [a guide](https://unifiedpush.org/users/distributors/gotify/#docker-compose-quick-setup) on the documentation for UnifiedPush.
+
 ### Docker
 1. Run `docker run -p 5000:5000 -e UP_GATEWAY_MATRIX_ENABLE=true -e OTHER_ENV_VAR=other -v $PWD/config.toml:/app/config.toml:ro unifiedpush/common-proxies`. While changing parameters like the port and the environment variables to the appropriate values.
 1. Check the [example config file](./example-config.toml) for all configuration options and their environment variable forms
 1. Install the [reverse-proxy](#reverse-proxy)
-
 
 ### Reverse Proxy
 
