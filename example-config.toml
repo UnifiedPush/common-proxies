@@ -22,5 +22,6 @@ verbose = true # env: UP_VERBOSE
 
 
   [rewrite.gotify]
-    address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443 #env: UP_REWRITE_GOTIFY_ADDRESS
-    scheme = "https" #http or https #env: UP_REWRITE_GOTIFY_SCHEME
+    enabled = false # env: UP_REWRITE_GOTIFY_ENABLE
+    #address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443 #env: UP_REWRITE_GOTIFY_ADDRESS
+    #scheme = "https" #http or https #env: UP_REWRITE_GOTIFY_SCHEME

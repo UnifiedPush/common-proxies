@@ -9,7 +9,7 @@ import (
 )
 
 type Gotify struct {
-	Enabled bool   `env:"UP_REWRITE_GOTIFY_ENABLED"`
+	Enabled bool   `env:"UP_REWRITE_GOTIFY_ENABLE"`
 	Address string `env:"UP_REWRITE_GOTIFY_ADDRESS"`
 	Scheme  string `env:"UP_REWRITE_GOTIFY_SCHEME"`
 }
