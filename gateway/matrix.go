@@ -24,22 +24,26 @@ func (m Matrix) Get() []byte {
 	return []byte(`{"gateway":"matrix","unifiedpush":{"gateway":"matrix"}}`)
 }
 
+type Devices []struct{ PushKey string }
+
 func (m Matrix) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	pkStruct := struct {
-		Notification struct {
-			Devices []struct {
-				PushKey string
-			}
-		}
+		Notification map[string]interface{} `json:"notification"`
 	}{}
-	json.Unmarshal(body, &pkStruct)
-	if !(len(pkStruct.Notification.Devices) > 0) {
+	dev := struct{ Notification struct{ Devices } }{}
+	json.Unmarshal(body, &dev)
+
+	if !(len(dev.Notification.Devices) > 0) {
 		return nil, utils.NewProxyError(400, errors.New("Gateway URL"))
 	}
 
+	json.Unmarshal(body, &pkStruct)
+	delete(pkStruct.Notification, "devices")
+	body, _ = json.Marshal(&pkStruct)
+
 	reqs := []*http.Request{}
 
-	for _, i := range pkStruct.Notification.Devices {
+	for _, i := range dev.Notification.Devices {
 		newReq, err := http.NewRequest(http.MethodPost, i.PushKey, bytes.NewReader(body))
 		if err != nil {
 			return nil, err //TODO
