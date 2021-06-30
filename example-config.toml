@@ -1,22 +1,27 @@
-# if running inside docker change to "0.0.0.0:5000"
-listenAddr = "127.0.0.1:5000"
-verbose = true 
+listenAddr = "127.0.0.1:5000" #use docker settings inside docker # env: UP_LISTEN
+verbose = true # env: UP_VERBOSE
 
 
 # you can comment out categories to disable the endpoint
 [gateway]
   #                  non default https and http ports             default 80 and 443 
   # AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",  "myinternaldomain.local"] 
-  # if internal hosts need to be allowed to gateway to. Use this with caution and only allow as few hosts as required, if any. All public IPv4 addresses are allowed by default. 
+  # if internal hosts need to be allowed to gateway to. Use this with caution and only allow as few hosts as required, if any. All public addresses are allowed by default.
   # This takes in "<host>" if the default port for HTTP and/or HTTPS is expected or "<host>:<port>" if not.
   # The <host> can also be an ip if such a request is expected (probably shouldn't be for most setups).
-  [gateway.matrix] # takes no params but this needs to be declared to enable the endpoint
+  # env: UP_GATEWAY_ALLOWEDHOSTS, comma separated values
+
+  [gateway.matrix]
+  enabled = true # env: UP_GATEWAY_MATRIX_ENABLE
 
 [rewrite]
 
-  #[rewrite.fcm] #conmmenting disables forwarding fcm
-  # key = ""  #Firebase server key - See docs for more info
+  [rewrite.fcm]
+  enabled = false
+  # key = ""  #Firebase server key - See docs for more info #env: UP_REWRITE_FCM_KEY
+
 
   [rewrite.gotify]
-    address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443
-    scheme = "https" #http or https
+    enabled = false # env: UP_REWRITE_GOTIFY_ENABLE
+    #address = "gotify1.unifiedpush.org:443" #What hostname:port is gotify on; always write port even if 80 or 443 #env: UP_REWRITE_GOTIFY_ADDRESS
+    #scheme = "https" #http or https #env: UP_REWRITE_GOTIFY_SCHEME

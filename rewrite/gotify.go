@@ -1,18 +1,24 @@
 package rewrite
 
 import (
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 type Gotify struct {
-	Address string
-	Scheme  string
+	Enabled bool   `env:"UP_REWRITE_GOTIFY_ENABLE"`
+	Address string `env:"UP_REWRITE_GOTIFY_ADDRESS"`
+	Scheme  string `env:"UP_REWRITE_GOTIFY_SCHEME"`
 }
 
-func (Gotify) Path() string {
-	return "/UP"
+func (g Gotify) Path() string {
+	if g.Enabled {
+		return "/UP"
+	}
+	return ""
 }
 
 func (g Gotify) Req(body []byte, req http.Request) (*http.Request, error) {
@@ -50,4 +56,21 @@ func (g Gotify) RespCode(resp *http.Response) int {
 		400: 502, //unknown how to handle gotify 400 TODO
 		200: 202,
 	}[resp.StatusCode]
+}
+
+func (g *Gotify) Defaults() (failed bool) {
+	if !g.Enabled {
+		return
+	}
+	if len(g.Address) == 0 {
+		log.Println("Gotify Address cannot be empty")
+		failed = true
+	}
+
+	g.Scheme = strings.ToLower(g.Scheme)
+	if !(g.Scheme == "http" || g.Scheme == "https") {
+		log.Println("Gotify Scheme incorrect")
+		failed = true
+	}
+	return
 }

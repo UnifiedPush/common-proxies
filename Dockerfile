@@ -6,7 +6,7 @@ COPY ./ ./
 RUN go build -o up-rewrite
 
 FROM debian:stable-slim
-ENV UP_PROXY_SERVER_PORT="80"
+ENV UP_LISTEN="[::]:5000"
 WORKDIR /app
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq \
   curl \
