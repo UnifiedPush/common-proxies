@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -87,6 +88,8 @@ func (s *RewriteTests) TestMatrixSend() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := io.ReadAll(s.Resp.Body)
+	s.Equal(string(body), `{"rejected":[]}`)
 
 	s.Require().NotNil(s.Call, "No request made")
 
