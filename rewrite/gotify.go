@@ -50,12 +50,17 @@ func (g Gotify) Req(body []byte, req http.Request) (*http.Request, error) {
 
 func (g Gotify) RespCode(resp *http.Response) int {
 	//convert gotify message response to up resp
-	return map[int]int{
+	code, ok := map[int]int{
 		401: 404,
 		403: 404,
 		400: 502, //unknown how to handle gotify 400 TODO
 		200: 202,
 	}[resp.StatusCode]
+	if !ok {
+		log.Println("Gotify response unknown code", resp.StatusCode)
+		return 500
+	}
+	return code
 }
 
 func (g *Gotify) Defaults() (failed bool) {
