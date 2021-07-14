@@ -2,7 +2,6 @@ listenAddr = "127.0.0.1:5000" #use docker settings inside docker # env: UP_LISTE
 verbose = true # env: UP_VERBOSE
 
 
-# you can comment out categories to disable the endpoint
 [gateway]
   #                  non default https and http ports             default 80 and 443 
   # AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",  "myinternaldomain.local"] 
