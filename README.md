@@ -1,4 +1,7 @@
-# Go UnifiedPush Rewrite Proxy
+# UnifiedPush Common-Proxies
+
+Common-Proxies is a set of rewrite proxies and gateways for UnifiedPush. See [the diagram](https://unifiedpush.org/img/diagram.png) for more info regarding where rewrite proxies and gateways fit in UnifiedPush.
+
 
 ## Installing
 
@@ -17,7 +20,7 @@ There's [a guide](https://unifiedpush.org/users/distributors/gotify/#docker-comp
 
 ### Reverse Proxy
 
-Use the following nginx config, or the equivalent for your reverse proxy.
+Use the following nginx config, or the equivalent for your reverse proxy. The following snippet goes with the same domain as your push provider (probably Gotify).
 ```nginx 
 location ~ ^/(FCM|UP|_matrix) {    
         proxy_pass            http://127.0.0.1:5000;
@@ -27,6 +30,9 @@ The :5000 will be the port you specify to the listen directive in the config fil
 
 
 ## Rewrite Proxy
+
+Common-Proxies handles paths like /UP (Gotify) or /FCM (Firebase). Only traffic for these paths should be forwarded to common-proxies, where it can then convert the push message to the push-provider specific format.
+
 ### FCM
 
 This is meant to be hosted by the app developers or someone who has access to the Firebase settings for that project. The FCM key under `rewrite.fcm` in the config file is this secret key.
@@ -36,6 +42,8 @@ This is meant to be hosted by the app developers or someone who has access to th
 This is primarily meant to be hosted on the same machine as the Gotify server. Running it on a different machine hasn't been tested yet but you can share information about that in this repo's issues.
 
 ## Gateway
+
+A Gateway is meant to take push messages from an existing service, like Matrix and convert it to the UnifiedPush format. While Gateways are primarily meant to be hosted by the App Developer, some Gateways (like currently the only one, Matrix) support discovery on the push provider domain to find self-hosted gateways. It's always optional to host gateways as the app developer usually should have one.
 
 ### Matrix
 Gateways matrix push until [MSC 2970](https://github.com/matrix-org/matrix-doc/pull/2970) is accepted.  
