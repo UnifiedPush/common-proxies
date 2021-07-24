@@ -81,7 +81,7 @@ func (s *RewriteTests) TestGotify() {
 func (s *RewriteTests) TestMatrixSend() {
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}]}}`
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
@@ -93,7 +93,7 @@ func (s *RewriteTests) TestMatrixSend() {
 	s.Require().NotNil(s.Call, "No request made")
 
 	//call
-	s.Equal(content, string(s.CallBody), "request body incorrect")
+	s.Equal(`{"notification":{"counts":{"unread":1}}}`, string(s.CallBody), "request body incorrect")
 
 }
 
