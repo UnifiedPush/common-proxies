@@ -16,27 +16,29 @@ Common-Proxies is a set of rewrite proxies and gateways for UnifiedPush. See the
 
 1. Save one of the following files to .env in the same directory, depending on your needs.
 
-        If HTTPS is needed and the ports 443 and 80 have nothing else running on them.
-        ```env
-        DOMAIN=mydomain.example.com
-	UP_VERSION=v1.1
+    If HTTPS is needed and the ports 443 and 80 have nothing else running on them.
 
-        LISTEN_DOMAIN="http://${DOMAIN} https://${DOMAIN}"
-        HTTP=80
-        HTTPS=443
-        ```
+    ```env
+    DOMAIN=mydomain.example.com
+    UP_VERSION=v1.1
 
-        If you have another reverse proxy doing TLS and have that running on ports 80 and 443.
-        ```env
-        HTTP=127.0.0.1:4567
-	UP_VERSION=v1.1
+    LISTEN_DOMAIN="http://${DOMAIN} https://${DOMAIN}"
+    HTTP=80
+    HTTPS=443
+    ```
 
-        DOMAIN=*
-        LISTEN_DOMAIN="http://${DOMAIN} https://${DOMAIN}"
-        HTTPS=127.0.0.1:0 # essentially disables it
-        ```
+    If you have another reverse proxy doing TLS and have that running on ports 80 and 443.
 
-        These two are just basic configurations, things can be modified for more custom needs.
+    ```env
+    HTTP=127.0.0.1:4567
+    UP_VERSION=v1.1
+
+    DOMAIN=*
+    LISTEN_DOMAIN="http://${DOMAIN} https://${DOMAIN}"
+    HTTPS=127.0.0.1:0 # essentially disables it
+    ```
+
+    These two are just basic configurations, things can be modified for more custom needs.
 
 1. Run `docker-compose up -d` in that directory.
 
@@ -45,13 +47,14 @@ The linked docker compose file can be modified to suite your needs. Other config
 ### Reverse Proxy
 
 Use the following nginx config, or the equivalent for your reverse proxy. The following snippet goes with the same domain as your push provider (probably Gotify).
-```nginx 
+
+```nginx
 location ~ ^/(FCM|UP|_matrix) {    
         proxy_pass            http://127.0.0.1:5000;
 }
 ```
-The :5000 will be the port you specify to the listen directive in the config file or the docker port flag.
 
+The :5000 will be the port you specify to the listen directive in the config file or the docker port flag.
 
 ## Rewrite Proxy
 
@@ -70,8 +73,10 @@ This is primarily meant to be hosted on the same machine as the Gotify server. R
 A Gateway is meant to take push messages from an existing service (like Matrix) and convert it to the UnifiedPush format. While Gateways are primarily meant to be hosted by the App Developer, some Gateways (like the Matrix one) support discovery on the push provider domain to find self-hosted gateways. It's always optional to host gateways as the app developer usually should have one.
 
 ### Matrix
+
 Gateways Matrix push notifications.  
 `["notification"]["devices"][0]["pushkey"]` is the UP endpoint this gateways to.
 
 ## Note
+
 * Not all architectures in the releases have been tested.
