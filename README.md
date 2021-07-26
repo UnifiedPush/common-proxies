@@ -46,7 +46,7 @@ The linked docker compose file can be modified to suite your needs. Other config
 
 ### Reverse Proxy
 
-Use the following nginx config, or the equivalent for your reverse proxy. The following snippet goes with the same domain as your push provider (probably Gotify).
+Use the following nginx config, or the equivalent for your reverse proxy. The following snippet goes inside the same domain as your push provider (probably Gotify).
 
 ```nginx
 location ~ ^/(FCM|UP|_matrix) {    
@@ -54,7 +54,7 @@ location ~ ^/(FCM|UP|_matrix) {
 }
 ```
 
-The :5000 will be the port you specify to the listen directive in the config file or the docker port flag.
+The 127.0.0.1 will be the host, which when installed directly is probably 127.0.0.1, but when installed using docker is the container IP or the container hostname. The :5000 will be the port you specify to the listen directive in the config file or the docker port flag.
 
 ## Rewrite Proxy
 
