@@ -16,7 +16,7 @@ verbose = true # env: UP_VERBOSE
 [rewrite]
 
   [rewrite.fcm]
-  enabled = false
+  enabled = false # env: UP_REWRITE_FCM_ENABLE
   # key = ""  #Firebase server key - See docs for more info #env: UP_REWRITE_FCM_KEY
 
 
