@@ -1,5 +1,5 @@
-github.com/caarlos0/env/v6 v6.6.2 h1:BypLXDWQTA32rS4UM7pBz+/0BOuvs6C7LSeQAxMwyvI=
-github.com/caarlos0/env/v6 v6.6.2/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
+github.com/caarlos0/env/v6 v6.7.0 h1:OftrMgQyETinUI4YU3WxhHeKtCRonDMtnUO14+ZRXdY=
+github.com/caarlos0/env/v6 v6.7.0/go.mod h1:FE0jGiAnQqtv2TenJ4KTa8+/T2Ss8kdS5s1VEjasoN0=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56 h1:hFVkLRVbV5WEXdoTDjBj7kR59WA1FFVhs4qBUyRthDc=
