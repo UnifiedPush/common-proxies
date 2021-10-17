@@ -1,6 +1,6 @@
 # Installation
 
-After following one of the two sections below, set up a [reverse proxy](reverse_proxy.md).
+After following one of the two sections below (Linux or Docker), set up a [reverse proxy](reverse_proxy.md).
 
 ## Linux
 
