@@ -15,7 +15,7 @@ services:
       - CADDY_INGRESS_NETWORKS=up_proxy_network
     labels:
       caddy: ${LISTEN_DOMAIN}
-  t proxy:
+  proxy:
     image: "unifiedpush/common-proxies"
     labels:
       caddy: ${LISTEN_DOMAIN}
