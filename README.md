@@ -4,7 +4,7 @@ Common-Proxies is a set of rewrite proxies and push gateways for UnifiedPush. Se
 ![UnifiedPush service connection diagram](https://unifiedpush.org/img/diagram.png)
 
 Common-Proxies is most commonly used to do the following:
-  1. Adding UnifiedPush compatibility to [Gotify](//gotify.net).
+  1. Adding UnifiedPush compatibility to a [Gotify](//gotify.net) server.
   1. Self-Hosting the [Matrix](//matrix.org) to UnifiedPush push gateway.
   1. App Developers only: Running embedded FCM distributor.
 
