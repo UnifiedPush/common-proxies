@@ -28,7 +28,10 @@ The port only needs to be included if it's something other than 80 or 443, but i
 
 Example:
 ```toml
-AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",	"myinternaldomain.local"] 
+AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080", "myinternaldomain.local"] 
 ```
 
- In environment variables, this is a comma seperated list                      |
+In environment variables, this is a comma seperated list:
+```env
+UP_GATEWAY_ALLOWEDHOSTS="abc.localhost:8443,abc.localhost:8080,myinternaldomain.local"
+```
