@@ -48,3 +48,42 @@ server {
 	}
 }
 ```
+
+### Caddy
+
+This snippet can be placed in a Caddyfile.
+```caddy
+gotify.example.org {
+    @rewrite_proxy {
+        path /UP* /_matrix*
+    }
+    reverse_proxy @rewrite_proxy 127.0.0.1:5000
+
+    reverse_proxy 127.0.0.1:8000
+}
+```
+
+### Apache
+
+```apache
+ServerName gotify.example.org
+
+# Send these 3 paths to common-proxies
+ProxyPass "/_matrix" http://127.0.0.1:5000/_matrix
+ProxyPass "/UP" http://127.0.0.1:5000/UP
+ProxyPass "/FCM" http://127.0.0.1:5000/FCM
+
+Keepalive On
+
+# The proxy must preserve the host because gotify verifies the host with the origin
+# for WebSocket connections
+ProxyPreserveHost On
+
+# Proxy web socket requests to /stream
+ProxyPass "/stream" ws://127.0.0.1:8000/stream retry=0 timeout=60
+
+# Proxy all other requests to /
+ProxyPass "/" http://127.0.0.1:8000/ retry=0 timeout=5
+
+ProxyPassReverse / http://127.0.0.1:8000/
+```
