@@ -10,10 +10,10 @@ Common-Proxies is most commonly used to do the following:
 
 ## Installing
 
-To install this the typical way, go to <docs/install.md>.  
-If you know docker-compose and want to quickly set it up, go to <docs/docker-quickstart.md>.
+To install this the typical way, go to [install.md](docs/install.md).  
+If you know docker-compose and want to quickly set it up, go to [docker-quickstart.md](docs/docker-quickstart.md).
 
-Documentation for configuration can be found at <docs/config.md>.
+Documentation for configuration can be found at [config.md](docs/config.md).
 
 For more details about how this works, read on -
 

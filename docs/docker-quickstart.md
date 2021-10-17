@@ -32,4 +32,4 @@ If you know how to use docker-compose, the following is the quickest way to set 
 
 1. Run `docker-compose up -d` in that directory.
 
-The linked docker compose file can be modified to suite your needs. Other environment variable configuration options are available in <config.md>.
+The linked docker compose file can be modified to suite your needs. Other environment variable configuration options are available in [config.md](config.md).

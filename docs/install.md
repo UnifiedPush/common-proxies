@@ -5,7 +5,7 @@ After following one of the two sections below, set up a [reverse proxy](reverse_
 ## Linux
 
 1. Download the [latest binary](https://github.com/UnifiedPush/common-proxies/releases) onto your server.
-1. Create a new `config.toml` file based on the [example config file](./example-config.toml). See <config.md> for reference.
+1. Create a new `config.toml` file based on the [example config file](./example-config.toml). See [config.md](config.md) for reference.
 
 ### Service management
 
