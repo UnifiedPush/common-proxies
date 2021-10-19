@@ -15,11 +15,8 @@ services:
       - CADDY_INGRESS_NETWORKS=up_proxy_network
     labels:
       caddy: ${LISTEN_DOMAIN}
-      caddy.@upgrade.0_header: Upgrade-Insecure-Requests 1
-      caddy.@upgrade.1_protocol: http
-      caddy.redir: "@upgrade https://{host}{uri} 308"
   proxy:
-    image: "unifiedpush/common-proxies:${UP_VERSION}"
+    image: "unifiedpush/common-proxies"
     labels:
       caddy: ${LISTEN_DOMAIN}
       caddy.@match.path: /UP* /FCM* /_matrix*
