@@ -23,7 +23,7 @@ If you know how to use docker-compose, the following is the quickest way to set 
     ```env
     HTTP=127.0.0.1:5135
 
-    DOMAIN=*
+    DOMAIN=""
     LISTEN_DOMAIN="http://${DOMAIN}"
     HTTPS=127.0.0.1:0 # essentially disables it
     ```
