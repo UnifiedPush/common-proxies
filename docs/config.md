@@ -35,3 +35,7 @@ In environment variables, this is a comma seperated list:
 ```env
 UP_GATEWAY_ALLOWEDHOSTS="abc.localhost:8443,abc.localhost:8080,myinternaldomain.local"
 ```
+
+## Configuration file location
+
+By default the configuration file should be located at `config.toml` in the current working directory (the one from which the command is run). This can be changed by adding the `-c` flag when running the application on the command line, and passing an alternate path to that.
