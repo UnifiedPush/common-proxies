@@ -20,6 +20,7 @@ var configFile = flag.String("c", "config.toml", "path to toml file for config")
 var handlers = []Handler{}
 
 func main() {
+	flag.Parse()
 	err := ParseConf(*configFile)
 	if err != nil {
 		log.Fatalln(err)
