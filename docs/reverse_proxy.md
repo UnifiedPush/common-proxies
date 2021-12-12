@@ -26,7 +26,7 @@ server {
 	# this controls gotify traffic
 	location / {
 		# We set up the reverse proxy
-		proxy_pass		http://gotify;
+		proxy_pass		http://127.0.0.1:8000;
 		proxy_http_version		1.1;
 	
 		# Ensuring it can use websockets
