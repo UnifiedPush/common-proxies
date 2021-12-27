@@ -8,7 +8,7 @@ See [the example configuration file](../example-config.toml) for how a toml conf
 | Verbose logs                | verbose                | UP_VERBOSE                | boolean     | Detailed logs or not. It is recommended to always set this to true.           |
 | Enable Matrix Gateway       | gateway.matrix.enable  | UP_GATEWAY_MATRIX_ENABLE  | boolean     |                                                                               |
 | Enable Gotify Rewrite Proxy | rewrite.gotify.enable  | UP_REWRITE_GOTIFY_ENABLE  | boolean     |                                                                               |
-| Gotify forwarding address   | rewrite.gotify.address | UP_REWRITE_GOTIFY_ENABLE  | string      | What is the domain of your Gotify server. This has to be a `host:port` combo. |
+| Gotify forwarding address   | rewrite.gotify.address | UP_REWRITE_GOTIFY_ADDRESS  | string      | What is the domain of your Gotify server. This has to be a `host:port` combo. |
 | Gotify forwarding scheme    | rewrite.gotify.scheme  | UP_REWRITE_GOTIFY_SCHEME  | string      | `http` or `https`                                                             |
 | Enable FCM Rewrite Proxy    | rewrite.fcm.enable     | UP_REWRITE_FCM_ENABLE     | boolean     |                                                                               |
 | Firebase Server Key for FCM | rewrite.fcm.key        | UP_REWRITE_FCM_KEY        | string      |                                                                               |
