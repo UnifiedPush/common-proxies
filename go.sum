@@ -1,13 +1,11 @@
-github.com/caarlos0/env/v6 v6.6.2 h1:BypLXDWQTA32rS4UM7pBz+/0BOuvs6C7LSeQAxMwyvI=
-github.com/caarlos0/env/v6 v6.6.2/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
+github.com/caarlos0/env/v6 v6.9.0 h1:+s23RYRE/uRVY6KT7JDYKjC3Wlb/xHtMUFTOwiKyc2c=
+github.com/caarlos0/env/v6 v6.9.0/go.mod h1:hvp/ryKXKipEkcuYjs9mI4bBCg+UI0Yhgm5Zu0ddvwc=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56 h1:hFVkLRVbV5WEXdoTDjBj7kR59WA1FFVhs4qBUyRthDc=
 github.com/karmanyaahm/paranoidhttp v0.2.1-0.20210628044206-c40d6edc4d56/go.mod h1:f9cFbB2hM4ZcEgWu0zw9+hjzk5kG/Ys8jxEmyMBBeqk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc h1:qqbeoQ7wVR5NFIGyJdz/PQjuCBzpg8GxOaF0HWivFMk=
 github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc/go.mod h1:wLcNqnyr6riTbnFObg4o2/GemTCso9AnsUdLsMsdspw=
-github.com/matryer/is v1.4.0 h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=
-github.com/matryer/is v1.4.0/go.mod h1:8I/i5uYgLzgsgEloJE1U6xx5HkBQpAZvepWuujKwMRU=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
