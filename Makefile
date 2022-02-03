@@ -19,9 +19,7 @@ test-docker:
 	$(DOCKER_CMD) go test ./...
 
 # check out this if the cross-docker things don't work https://stackoverflow.com/a/65371609/8919142
-prep-build:
-	cp example-config.toml config.toml
-build-local: prep-build
+
+build-local:
 	docker build . -t unifiedpush/common-proxies:testing
-	rm config.toml
 
