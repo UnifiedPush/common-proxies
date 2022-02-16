@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -37,6 +38,9 @@ func main() {
 	for _, i := range handlers {
 		if i.Path() != "" {
 			myRouter.HandleFunc(i.Path(), handle(i))
+			if config.Config.Verbose {
+				fmt.Println("Handling", i.Path())
+			}
 		}
 	}
 	myRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
