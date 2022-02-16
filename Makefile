@@ -1,5 +1,5 @@
 BUILD_DIR=./bin
-DOCKER_CMD=docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.15
+DOCKER_CMD=docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.17
 
 local:
 	go build -o up-rewrite
