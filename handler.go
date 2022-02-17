@@ -45,8 +45,12 @@ func bothHandler(f HttpHandler) HttpHandler {
 
 func gatewayHandler(h Gateway) HttpHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var nread, nwritten int
-		var respType string
+		var (
+			nread    int
+			nwritten int64
+			respType string
+			reqs     []*http.Request
+		)
 
 		switch r.Method {
 		case http.MethodGet:
@@ -54,8 +58,9 @@ func gatewayHandler(h Gateway) HttpHandler {
 		case http.MethodPost:
 			body, err := ioutil.ReadAll(io.LimitReader(r.Body, 4005))
 			r.Body.Close()
+			nread = len(body)
 
-			reqs, err := h.Req(body, *r)
+			reqs, err = h.Req(body, *r)
 
 			if err != nil {
 				errHandle(err, w)
@@ -65,6 +70,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 
 			resps := make([]*http.Response, len(reqs))
 			for i, req := range reqs {
+				nwritten += req.ContentLength
 				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
 					CheckIfRewriteProxy(req.URL.String(), normalClient)
 					resps[i], err = normalClient.Do(req)
@@ -87,7 +93,15 @@ func gatewayHandler(h Gateway) HttpHandler {
 			respType = strconv.Itoa(http.StatusMethodNotAllowed)
 		}
 
-		log.Println(r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType)
+		prints := []interface{}{r.Method, r.URL.Path, r.RemoteAddr, nread, "bytes read;", nwritten, "bytes written;", r.UserAgent(), respType, ";"}
+		if Config.Verbose {
+			hosts := []interface{}{}
+			for _, i := range reqs {
+				hosts = append(hosts, i.Host)
+			}
+			prints = append(prints, hosts...)
+		}
+		log.Println(prints...)
 
 		return
 
@@ -142,7 +156,6 @@ func proxyHandler(h Proxy) HttpHandler {
 			respType = "method not allowed"
 		}
 		w.WriteHeader(code)
-
 		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType)
 
 		return
