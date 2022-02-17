@@ -40,6 +40,7 @@ func (s *RewriteTests) SetupTest() {
 	u, _ := url.Parse(s.ts.URL)
 	config.Config.Gateway.AllowedHosts = []string{u.Host}
 	s.Resp = httptest.NewRecorder()
+
 }
 
 func (s *RewriteTests) TearDownTest() {
@@ -49,16 +50,26 @@ func (s *RewriteTests) TearDownTest() {
 func (s *RewriteTests) TestFCM() {
 	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL}
 
-	request := httptest.NewRequest("POST", "/?token=a", bytes.NewBufferString("content"))
-	handle(&fcm)(s.Resp, request)
+	cases := [][]string{
+		{"EFCMD", "/?token=a&instance=b", `{"to":"a","data":{"body":"content","instance":"b"}}`},
+		{"FCMD", "/?token=a&app=a", `{"to":"a","data":{"app":"a","body":"content"}}`},
+		{"FCMv2", "/?token=a&instance=myinst&v2", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`},
+		{"FCMv2-2", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`},
+	}
 
-	//resp
-	s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+	for _, i := range cases {
+		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[1], bytes.NewBufferString("content")))
+		s.Equal(i[2]+"\n", string(s.CallBody), "Wrong Content")
 
-	s.Require().NotNil(s.Call, "No request made")
-	//call
-	s.Equal("key=testkey", s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
 
+		s.Require().NotNil(s.Call, "No request made")
+		//call
+		s.Equal("key=testkey", s.Call.Header.Get("Authorization"), "header not set")
+		if s.T().Failed() {
+			println("that was " + i[0])
+		}
+	}
 }
 
 func (s *RewriteTests) TestGotify() {

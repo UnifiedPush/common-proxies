@@ -1,6 +1,8 @@
 package rewrite
 
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,21 +24,37 @@ func (f FCM) Path() string {
 }
 
 type fcmData struct {
-	To       string            `json:"to"`
-	Data     map[string]string `json:"data"`
-	Instance string            `json:"instance"`
+	To   string            `json:"to"`
+	Data map[string]string `json:"data"`
 }
 
 func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	token := req.URL.Query().Get("token")
 	instance := req.URL.Query().Get("instance")
+	app := req.URL.Query().Get("app")
+	isV2 := req.URL.Query().Has("v2")
+
+	var data map[string]string
+
+	if isV2 {
+		//it's a little under 3072 but 3072 is def over. i'll test the specifics later
+		if len(body) > 3072 {
+			return nil, utils.NewProxyError(413, errors.New("FCM Payload length medium"))
+		}
+		data = map[string]string{"b": base64.StdEncoding.EncodeToString(body), "i": instance}
+	} else {
+		if app == "" && instance != "" {
+			data = map[string]string{"body": string(body), "instance": instance}
+		} else if app != "" && instance == "" {
+			data = map[string]string{"body": string(body), "app": app}
+		} else {
+			return nil, utils.NewProxyError(404, errors.New("Invalid query params in v1 FCM"))
+		}
+	}
 
 	newBody, err := utils.EncodeJSON(fcmData{
-		To: token,
-		Data: map[string]string{
-			"body": string(body),
-		},
-		Instance: instance,
+		To:   token,
+		Data: data,
 	})
 	if err != nil {
 		fmt.Println(err)
