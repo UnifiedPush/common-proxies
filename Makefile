@@ -2,7 +2,7 @@ BUILD_DIR=./bin
 DOCKER_CMD=docker run --rm -it -v "$$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.17
 
 local:
-	GIT_CMT=$$(git describe --tags) && go build -o up-rewrite -ldflags "-X github.com/karmanyaahm/up_rewrite/config.Version=$$GIT_CMT"
+	GIT_CMT=$$(git describe --tags --always) && go build -o up-rewrite -ldflags "-X github.com/karmanyaahm/up_rewrite/config.Version=$$GIT_CMT"
 local-docker:
 	$(DOCKER_CMD) make local
 all:
