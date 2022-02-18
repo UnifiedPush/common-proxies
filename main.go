@@ -27,6 +27,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	log.Println("Starting", Config.GetUserAgent())
+
 	handlers = []Handler{
 		&Config.Rewrite.Gotify,
 		&Config.Rewrite.FCM,

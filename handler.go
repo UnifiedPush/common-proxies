@@ -71,6 +71,8 @@ func gatewayHandler(h Gateway) HttpHandler {
 			resps := make([]*http.Response, len(reqs))
 			for i, req := range reqs {
 				nwritten += req.ContentLength
+
+				req.Header.Add("User-Agent", Config.GetUserAgent())
 				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
 					CheckIfRewriteProxy(req.URL.String(), normalClient)
 					resps[i], err = normalClient.Do(req)

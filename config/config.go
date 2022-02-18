@@ -16,12 +16,15 @@ import (
 	"github.com/komkom/toml"
 )
 
+var Version string = "dev"
+
 var Config Configuration
 var ConfigLock sync.RWMutex
 
 type Configuration struct {
-	ListenAddr string `env:"UP_LISTEN"`
-	Verbose    bool   `env:"UP_VERBOSE"`
+	ListenAddr  string `env:"UP_LISTEN"`
+	Verbose     bool   `env:"UP_VERBOSE"`
+	UserAgentID string `env:"UP_UAID"`
 
 	Gateway struct {
 		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
@@ -32,6 +35,19 @@ type Configuration struct {
 		FCM    rewrite.FCM
 		Gotify rewrite.Gotify
 	}
+}
+
+var ua string
+
+func (c Configuration) GetUserAgent() string {
+	if ua != "" {
+		return ua
+	}
+	ua = "UnifiedPush-Common-Proxies/" + Version
+	if Config.UserAgentID != "" {
+		ua += " (" + Config.UserAgentID + ")"
+	}
+	return ua
 }
 
 func ParseConf(location string) error {
