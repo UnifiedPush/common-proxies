@@ -1,9 +1,9 @@
-FROM golang:1.15-buster as build
+FROM golang:1.17-buster as build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY ./ ./
-RUN go build -o up-rewrite
+RUN make local
 
 FROM debian:stable-slim
 ENV UP_LISTEN="[::]:5000"
