@@ -13,6 +13,7 @@ import (
 type FCM struct {
 	Enabled bool   `env:"UP_REWRITE_FCM_ENABLE"`
 	Key     string `env:"UP_REWRITE_FCM_KEY"`
+	Keys    map[string]string
 	APIURL  string
 }
 
@@ -33,6 +34,13 @@ func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	instance := req.URL.Query().Get("instance")
 	app := req.URL.Query().Get("app")
 	isV2 := req.URL.Query().Has("v2")
+
+	key := f.Key
+	if k, ok := f.Keys[req.Host]; ok {
+		key = k
+	} else if key == "" {
+		return nil, utils.NewProxyError(404, errors.New("Endpoint doesn't exist. Wrong Host "+req.Host))
+	}
 
 	var data map[string]string
 
@@ -67,7 +75,7 @@ func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+f.Key)
+	newReq.Header.Set("Authorization", "key="+key)
 
 	return newReq, nil
 }
@@ -81,7 +89,7 @@ func (f *FCM) Defaults() (failed bool) {
 	if !f.Enabled {
 		return
 	}
-	if len(f.Key) == 0 {
+	if len(f.Key) == 0 && len(f.Keys) == 0 {
 		log.Println("FCM Key cannot be empty")
 		failed = true
 	}
