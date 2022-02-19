@@ -166,7 +166,7 @@ func proxyHandler(h Proxy) HttpHandler {
 
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
-		if err, ok := e.(utils.ProxyError); ok {
+		if err, ok := e.(*utils.ProxyError); ok {
 			logV(err.S.Error())
 			w.WriteHeader(err.Code)
 			return true
