@@ -72,6 +72,50 @@ func (s *RewriteTests) TestFCM() {
 	}
 }
 
+func (s *RewriteTests) TestFCMKeys() {
+	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL, Keys: map[string]string{"1.invalid": "key2", "2.invalid": "key3"}}
+
+	cases := [][]string{
+		{"http://example.invalid?v2", "testkey"},
+		{"http://1.invalid?v2", "key2"},
+		{"http://2.invalid?v2", "key3"},
+		{"http://random.test?v2", "testkey"},
+	}
+	for _, i := range cases {
+		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
+		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+	}
+	s.Call = nil
+	s.Resp = httptest.NewRecorder()
+
+	//Key omitted for testing
+	fcm = rewrite.FCM{APIURL: s.ts.URL, Keys: map[string]string{"1.invalid": "key2", "2.invalid": "key3"}}
+
+	cases = [][]string{
+		{"http://1.invalid?v2", "key2"},
+		{"http://2.invalid?v2", "key3"},
+	}
+	for _, i := range cases {
+		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
+		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+	}
+	s.Call = nil
+	s.Resp = httptest.NewRecorder()
+
+	cases = [][]string{
+		{"http://123.invalid?v2"},
+		{"http://random.invalid?v2"},
+	}
+	for _, i := range cases {
+		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
+
+		s.Nil(s.Call, "no request should be made because of the error")
+		s.Equal(404, s.Resp.Result().StatusCode, "request should be invalid")
+	}
+}
+
 func (s *RewriteTests) TestGotify() {
 	testurl, _ := url.Parse(s.ts.URL)
 	gotify := rewrite.Gotify{Address: testurl.Host, Scheme: testurl.Scheme}
@@ -92,7 +136,7 @@ func (s *RewriteTests) TestGotify() {
 func (s *RewriteTests) TestMatrixSend() {
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"},{"pushkey":"http://temp"}], "counts":{"unread":1}}}`
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"},{"pushkey":"http://temp.test"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
