@@ -108,7 +108,7 @@ Here is a toml example:
 
   [http.routers.gotify]
     entryPoints = ["websecure"]
-    rule = "Host(`gotify.example.org`)
+    rule = "Host(`gotify.example.org`)"
     service = "gotify-service"
 
     [http.routers.gotify.tls]
