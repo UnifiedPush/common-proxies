@@ -1,8 +1,8 @@
 # Docker-Compose Quick start
 
-If you know how to use docker-compose, the following is the quickest way to set up the whole common-proxies, gotify, caddy stack.
+If you know how to use docker-compose, the following is the quickest way to set up the whole common-proxies, gotify, caddy/traefik stack.
 
-1. Download this [docker-compose.yml](./docker-compose-quick.yml) in a new directory.
+1. Download the desired docker-compose.yml for [caddy](./docker-compose-caddy.yml) or [traefik](./docker-compose-traefik.yml) in a new directory.
 
 1. Save one of the following files to .env in the same directory.
 
@@ -11,7 +11,6 @@ If you know how to use docker-compose, the following is the quickest way to set 
 
     ```env
     DOMAIN=mydomain.example.com
-
     LISTEN_DOMAIN="http://${DOMAIN} https://${DOMAIN}"
     HTTP=80
     HTTPS=443
@@ -21,11 +20,15 @@ If you know how to use docker-compose, the following is the quickest way to set 
     Point them to localhost:5135 or change the port to one of your choice.
 
     ```env
-    HTTP=127.0.0.1:5135
-
     DOMAIN=""
     LISTEN_DOMAIN="http://${DOMAIN}"
+    HTTP=127.0.0.1:5135
     HTTPS=127.0.0.1:0 # essentially disables it
+    ```
+
+    Traefik setup needs one more variable for the automatic certificate negotiation:
+    ```env
+    SSL_EMAIL=your-expiry-notification-email@example.org
     ```
 
     These two are just basic configurations, things can be modified for more custom needs.
