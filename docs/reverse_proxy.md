@@ -49,20 +49,6 @@ server {
 }
 ```
 
-### Caddy
-
-This snippet can be placed in a Caddyfile.
-```caddy
-gotify.example.org {
-    @rewrite_proxy {
-        path /UP* /_matrix*
-    }
-    reverse_proxy @rewrite_proxy 127.0.0.1:5000
-
-    reverse_proxy 127.0.0.1:8000
-}
-```
-
 ### Apache
 
 ```apache
@@ -86,4 +72,55 @@ ProxyPass "/stream" ws://127.0.0.1:8000/stream retry=0 timeout=60
 ProxyPass "/" http://127.0.0.1:8000/ retry=0 timeout=5
 
 ProxyPassReverse / http://127.0.0.1:8000/
+```
+
+### Caddy
+
+This snippet can be placed in a Caddyfile.
+```caddy
+gotify.example.org {
+    @rewrite_proxy {
+        path /UP* /_matrix*
+    }
+    reverse_proxy @rewrite_proxy 127.0.0.1:5000
+
+    reverse_proxy 127.0.0.1:8000
+}
+```
+
+### Traefik v2
+
+Check the example [docker-compose.yml](./docker-compose-traefik.yml) for Traefik which configures the reverse proxy using labels.
+
+The same settings could also be written in a yaml or toml format for the Traefik File provider, which can be used when gotify and common proxies are not running as docker services.
+
+Here is a toml example:
+
+```toml
+[http.routers]
+  [http.routers.commonproxies]
+    entryPoints = ["websecure"]
+    rule = "Host(`gotify.example.org`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`)"
+    service = "commonproxies-service"
+
+    [http.routers.commonproxies.tls]
+      certResolver = "myresolver"
+
+  [http.routers.gotify]
+    entryPoints = ["websecure"]
+    rule = "Host(`gotify.example.org`)"
+    service = "gotify-service"
+
+    [http.routers.gotify.tls]
+      certResolver = "myresolver"
+
+[http.services]
+  [http.services.commonproxies-service.loadBalancer]
+    [[http.services.commonproxies-service.loadBalancer.servers]]
+      url = "http://127.0.0.1:5000/"
+
+  [http.services.gotify-service.loadBalancer]
+    [[http.services.gotify-service.loadBalancer.servers]]
+      url = "http://127.0.0.1:8000/"
+
 ```

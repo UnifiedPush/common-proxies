@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     environment:
       - UP_REWRITE_GOTIFY_ENABLE=true
-      - UP_REWRITE_GOTIFY_ADDRESS=gotify
+      - UP_REWRITE_GOTIFY_ADDRESS=gotify:80
       - UP_REWRITE_GOTIFY_SCHEME=http
       - UP_GATEWAY_MATRIX_ENABLE=true
   gotify:

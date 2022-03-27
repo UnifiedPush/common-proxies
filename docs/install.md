@@ -1,7 +1,5 @@
 # Installation
 
-After following one of the two sections below (Linux or Docker), set up a [reverse proxy](reverse_proxy.md).
-
 ## Linux
 
 1. Download the [latest binary](https://github.com/UnifiedPush/common-proxies/releases) onto your server.
@@ -42,7 +40,4 @@ To see logs, run the following command
 journalctl -xeu up-rewrite-proxy
 ```
 
-
-## Docker
-
-TODO
+Next, configure your [reverse proxy](reverse_proxy.md).

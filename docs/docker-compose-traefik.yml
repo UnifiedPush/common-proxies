@@ -1,0 +1,67 @@
+# Thanks to @squatica@github.com for contributing this
+services:
+
+  traefik:
+    image: traefik:v2.5
+    volumes:
+      - acme:/acme/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${HTTP:?}:80"
+      - "${HTTPS:?}:443"
+    command: >
+      --global.checknewversion=false
+      --global.sendanonymoususage=false
+      --entryPoints.web.address=:80
+      --entryPoints.websecure.address=:443
+      --certificatesresolvers.myresolver=true
+      --certificatesresolvers.myresolver.acme.email=${SSL_EMAIL:?}
+      --certificatesresolvers.myresolver.acme.storage=/acme/acme.json
+      --certificatesResolvers.myresolver.acme.tlsChallenge=true
+      --log=true
+      --log.level=DEBUG
+      --accesslog=true
+      --api.insecure=true
+      --api.dashboard=true
+      --providers.docker=true
+      --providers.docker.exposedByDefault=false
+      --providers.docker.defaultRule="Host(`{{ trimPrefix `/` .Name }}.docker.localhost`)"
+      --pilot.dashboard=false
+      --tracing=false
+
+  proxy:
+    image: unifiedpush/common-proxies
+    environment:
+      - UP_REWRITE_GOTIFY_ENABLE=true
+      - UP_REWRITE_GOTIFY_ADDRESS=gotify:80
+      - UP_REWRITE_GOTIFY_SCHEME=http
+      - UP_GATEWAY_MATRIX_ENABLE=true
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.commonproxies-tls.entrypoints=websecure"
+      - "traefik.http.routers.commonproxies-tls.tls=true"
+      - "traefik.http.routers.commonproxies-tls.tls.certresolver=myresolver"
+      - "traefik.http.routers.commonproxies-tls.rule=Host(`${LISTEN_DOMAIN:?}`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`)"
+      - "traefik.http.routers.commonproxies-tls.service=commonproxies-tls-service"
+      - "traefik.http.services.commonproxies-tls-service.loadbalancer.server.port=5000"
+
+  gotify:
+    image: gotify/server
+    environment:
+      - GOTIFY_DEFAULTUSER_PASS=my-very-good-password
+      - GOTIFY_REGISTRATION=false
+    volumes:
+      - "./data/gotify:/app/data"
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gotify-tls.entrypoints=websecure"
+      - "traefik.http.routers.gotify-tls.tls=true"
+      - "traefik.http.routers.gotify-tls.tls.certresolver=myresolver"
+      - "traefik.http.routers.gotify-tls.rule=Host(`${LISTEN_DOMAIN:?}`)"
+      - "traefik.http.routers.gotify-tls.service=gotify-tls-service"
+      - "traefik.http.services.gotify-tls-service.loadbalancer.server.port=80"
+
+volumes:
+  acme:
