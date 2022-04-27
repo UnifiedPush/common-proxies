@@ -20,6 +20,7 @@ See [the example configuration file](../example-config.toml) for how a toml conf
 
 Most people shouldn't use this.
 
+As long as the DNS on the common-proxies host returns a public IP for your gateway target (your push provider), you don't need this.
 This is used if you need to allow gatewaying to an internal or local host. Use this with caution and only allow as few hosts as required. All public addresses are allowed by default.  
 This takes in `<host>` if the default port for HTTP and/or HTTPS is expected or `<host>:<port>` if not.
 `<host>` can also be an IP address if such a request is expected (shouldn't be the case for **most** setups).  
