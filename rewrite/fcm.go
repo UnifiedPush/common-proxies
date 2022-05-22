@@ -29,7 +29,7 @@ type fcmData struct {
 	Data map[string]string `json:"data"`
 }
 
-func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
+func (f FCM) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	token := req.URL.Query().Get("token")
 	instance := req.URL.Query().Get("instance")
 	app := req.URL.Query().Get("app")
@@ -77,7 +77,7 @@ func (f FCM) Req(body []byte, req http.Request) (*http.Request, error) {
 	newReq.Header.Set("Content-Type", "application/json")
 	newReq.Header.Set("Authorization", "key="+key)
 
-	return newReq, nil
+	return []*http.Request{newReq}, nil
 }
 
 func (f FCM) RespCode(resp *http.Response) int {
