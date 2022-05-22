@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"github.com/karmanyaahm/up_rewrite/utils"
@@ -29,7 +30,24 @@ type fcmData struct {
 	Data map[string]string `json:"data"`
 }
 
-func (f FCM) Req(body []byte, req http.Request) ([]*http.Request, error) {
+func (f FCM) makeReqFromValues(fcmdata fcmData, key string) (newReq *http.Request, err error) {
+	newBody, err := utils.EncodeJSON(fcmdata)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err //TODO
+	}
+
+	newReq, err = http.NewRequest(http.MethodPost, f.APIURL, newBody)
+	if err != nil {
+		return nil, err
+	}
+
+	newReq.Header.Set("Content-Type", "application/json")
+	newReq.Header.Set("Authorization", "key="+key)
+	return
+}
+
+func (f FCM) Req(body []byte, req http.Request) (requests []*http.Request, error error) {
 	token := req.URL.Query().Get("token")
 	instance := req.URL.Query().Get("instance")
 	app := req.URL.Query().Get("app")
@@ -43,13 +61,17 @@ func (f FCM) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	}
 
 	var data map[string]string
+	var data2 map[string]string = nil
 
 	if isV2 {
-		//it's a little under 3072 but 3072 is def over. i'll test the specifics later
-		if len(body) > 3072 {
-			return nil, utils.NewProxyError(413, errors.New("FCM Payload length medium"))
+		b := base64.StdEncoding.EncodeToString(body)
+		if len(b) < 3800 {
+			data = map[string]string{"b": b, "i": instance}
+		} else {
+			m := fmt.Sprint(rand.Int63() + 1) // +1 to ensure 0 isn't included
+			data = map[string]string{"b": b[:3000], "i": instance, "m": m, "s": "1"}
+			data2 = map[string]string{"b": b[3000:], "i": instance, "m": m, "s": "2"}
 		}
-		data = map[string]string{"b": base64.StdEncoding.EncodeToString(body), "i": instance}
 	} else {
 		if app == "" && instance != "" {
 			data = map[string]string{"body": string(body), "instance": instance}
@@ -60,24 +82,21 @@ func (f FCM) Req(body []byte, req http.Request) ([]*http.Request, error) {
 		}
 	}
 
-	newBody, err := utils.EncodeJSON(fcmData{
-		To:   token,
-		Data: data,
-	})
-	if err != nil {
-		fmt.Println(err)
-		return nil, err //TODO
-	}
-
-	newReq, err := http.NewRequest(http.MethodPost, f.APIURL, newBody)
+	myreq, err := f.makeReqFromValues(fcmData{To: token, Data: data}, key)
 	if err != nil {
 		return nil, err
 	}
+	requests = append(requests, myreq)
 
-	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+key)
+	if data2 != nil {
+		myreq, err := f.makeReqFromValues(fcmData{To: token, Data: data2}, key)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, myreq)
+	}
 
-	return []*http.Request{newReq}, nil
+	return requests, nil
 }
 
 func (f FCM) RespCode(resp *http.Response) int {
