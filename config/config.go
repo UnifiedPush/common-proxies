@@ -22,6 +22,8 @@ var Config Configuration
 var ConfigLock sync.RWMutex
 
 type Configuration struct {
+	MaxUPSize int64 // not user configurable, overriden in defaults
+
 	ListenAddr  string `env:"UP_LISTEN"`
 	Verbose     bool   `env:"UP_VERBOSE"`
 	UserAgentID string `env:"UP_UAID"`
@@ -69,7 +71,7 @@ func ParseConf(location string) error {
 		return errors.New(fmt.Sprint("Error parsing config file exiting...", err))
 	}
 
-	if defaults(&config) {
+	if Defaults(&config) {
 		os.Exit(1)
 	}
 	log.Println("Loading new config")
@@ -77,7 +79,8 @@ func ParseConf(location string) error {
 	return nil
 }
 
-func defaults(c *Configuration) (failed bool) {
+func Defaults(c *Configuration) (failed bool) {
+	c.MaxUPSize = 4096 // this forces it to be this, ignoring user config
 	return c.Rewrite.Gotify.Defaults() ||
 		c.Rewrite.FCM.Defaults() ||
 		c.Gateway.Matrix.Defaults()
