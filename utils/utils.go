@@ -15,13 +15,18 @@ func EncodeJSON(inp interface{}) (io.Reader, error) {
 
 }
 
-func Min(i, j int) (k int) {
-	if i < j {
-		k = i
-	} else {
-		k = j
+func Min(a, b int) int {
+	if a < b {
+		return a
 	}
-	return
+	return b
+}
+
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func InStringSlice(ar []string, s string) bool {

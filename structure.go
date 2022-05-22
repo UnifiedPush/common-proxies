@@ -16,7 +16,7 @@ type Gateway interface {
 type Proxy interface {
 	Handler
 	RespCode(*http.Response) int
-	Req([]byte, http.Request) (*http.Request, error)
+	Req([]byte, http.Request) ([]*http.Request, error)
 }
 
 type Handler interface {

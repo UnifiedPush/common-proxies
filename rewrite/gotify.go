@@ -21,7 +21,7 @@ func (g Gotify) Path() string {
 	return ""
 }
 
-func (g Gotify) Req(body []byte, req http.Request) (*http.Request, error) {
+func (g Gotify) Req(body []byte, req http.Request) ([]*http.Request, error) {
 
 	url := *req.URL
 	url.Scheme = g.Scheme
@@ -45,7 +45,7 @@ func (g Gotify) Req(body []byte, req http.Request) (*http.Request, error) {
 	//newReq.Header = req.Header
 	newReq.Header.Set("Content-Type", "application/json")
 
-	return newReq, nil
+	return []*http.Request{newReq}, nil
 }
 
 func (g Gotify) RespCode(resp *http.Response) int {
