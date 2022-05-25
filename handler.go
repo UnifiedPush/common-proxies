@@ -148,13 +148,13 @@ func proxyHandler(h Proxy) HttpHandler {
 					break
 				}
 
+				code = utils.Max(code, h.RespCode(resp))
+				// logic here is that bigger code is worse and should be returned. If one request was ok (200) but one failed (400-500s), the larger one should be returned. It's not perfect, but 🤷
+
 				//read upto 4000 to be able to reuse conn then close
 				// this 4000 is arbritary and not related to the size limit
 				ioutil.ReadAll(io.LimitReader(r.Body, 4000))
 				resp.Body.Close()
-
-				code = utils.Max(code, h.RespCode(resp))
-				// logic here is that bigger code is worse and should be returned. If one request was ok (200) but one failed (400-500s), the larger one should be returned. It's not perfect, but 🤷
 			}
 
 			respType = "forward"
