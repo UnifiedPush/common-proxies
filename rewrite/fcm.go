@@ -2,6 +2,7 @@ package rewrite
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -99,9 +100,47 @@ func (f FCM) Req(body []byte, req http.Request) (requests []*http.Request, error
 	return requests, nil
 }
 
+type fcmResp struct {
+	Results []struct {
+		Error string
+	}
+}
+
 func (f FCM) RespCode(resp *http.Response) int {
-	return 202
-	//TODO https://firebase.google.com/docs/cloud-messaging/http-server-ref?authuser=0#error-codes
+	switch resp.StatusCode / 100 {
+	case 4: // 4xx
+		// error in common-proxies, not app server
+		return 500
+	case 5: // 5xx
+		//delay, TODO implement forced exponential backoff in common-proxies
+		return 429
+	}
+
+	dec := json.NewDecoder(resp.Body)
+
+	out := fcmResp{}
+	err := dec.Decode(&out)
+	if err != nil || len(out.Results) < 1 {
+		// already established it's not a 401, so dunno whats going on
+		return 502
+	}
+
+	givenErr := out.Results[0].Error
+
+	fmt.Printf("%s %d\n", givenErr, resp.StatusCode)
+	switch givenErr {
+	case "MissingRegistration", "InvalidRegistration", "NotRegistered", "MismatchSenderId":
+		return 404
+		//case "InvalidParameters": // doesn't happen because 4xx is handled above
+	case "MessageTooBig", "InvalidDataKey", "InvalidTtl", "TopicsMessageRateExceeded", "InvalidApnsCredential": // this shouldn't happen, common-proxies has its own checks for size, common-proxies controls the keys, common-proxies doesn't send TTL, common-proxies doesn't deal in topics, idk apns
+		return 502
+	case "Unavailable", "InternalServerError", "DeviceMessageRateExceeded":
+		//delay, TODO implement forced exponential backoff
+		return 429
+	default:
+		return 201
+	}
+	//TODO log
 }
 
 func (f *FCM) Defaults() (failed bool) {
