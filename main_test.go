@@ -29,6 +29,7 @@ type RewriteTests struct {
 	CallBody []byte
 	Resp     *httptest.ResponseRecorder
 	ts       *httptest.Server
+	resp     []byte
 }
 
 func (s *RewriteTests) SetupTest() {
@@ -36,6 +37,7 @@ func (s *RewriteTests) SetupTest() {
 		s.Call = r
 		s.CallBody, _ = ioutil.ReadAll(r.Body)
 		w.WriteHeader(200)
+		w.Write(s.resp)
 	}))
 
 	u, _ := url.Parse(s.ts.URL)
@@ -48,11 +50,14 @@ func (s *RewriteTests) resetTest() {
 	s.Call = nil
 	s.Resp = httptest.NewRecorder()
 	s.CallBody = []byte("")
+	s.resp = []byte{}
 }
 
 func (s *RewriteTests) TearDownTest() {
 	s.ts.Close()
 }
+
+const goodFCMResponse = `{"Results": [{"Error":""}]}`
 
 func (s *RewriteTests) TestFCM() {
 	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL}
@@ -67,9 +72,10 @@ func (s *RewriteTests) TestFCM() {
 	}
 
 	for _, i := range cases {
+		s.resp = []byte(goodFCMResponse)
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[1], bytes.NewBufferString(i[3])))
 
-		s.Require().Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+		s.Require().Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 
 		s.JSONEq(i[2], string(s.CallBody), "Wrong Content")
 
@@ -94,13 +100,16 @@ func (s *RewriteTests) TestFCMKeys() {
 		{"http://random.test?v2", "testkey"},
 	}
 	for _, i := range cases {
+		s.resetTest()
+		s.resp = []byte(goodFCMResponse)
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
 		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
-		s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+		s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 	}
 	s.Call = nil
 	s.Resp = httptest.NewRecorder()
 
+	// This case is where there is no 'default' key, only host specific keys
 	//Key omitted for testing
 	fcm = rewrite.FCM{APIURL: s.ts.URL, Keys: map[string]string{"1.invalid": "key2", "2.invalid": "key3"}}
 
@@ -109,9 +118,11 @@ func (s *RewriteTests) TestFCMKeys() {
 		{"http://2.invalid?v2", "key3"},
 	}
 	for _, i := range cases {
+		s.resetTest()
+		s.resp = []byte(goodFCMResponse)
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
 		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
-		s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+		s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 	}
 	s.Call = nil
 	s.Resp = httptest.NewRecorder()
@@ -121,6 +132,7 @@ func (s *RewriteTests) TestFCMKeys() {
 		{"http://random.invalid?v2"},
 	}
 	for _, i := range cases {
+		s.resetTest()
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
 
 		s.Nil(s.Call, "no request should be made because of the error")
