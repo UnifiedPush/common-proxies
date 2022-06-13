@@ -1,9 +1,16 @@
 package utils
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 func NewProxyError(code int, err error) *ProxyError {
 	return &ProxyError{err, code}
+}
+
+func NewProxyErrS(code int, str string, args ...interface{}) *ProxyError {
+	return &ProxyError{errors.New(fmt.Sprintf(str, args...)), code}
 }
 
 type ProxyError struct {

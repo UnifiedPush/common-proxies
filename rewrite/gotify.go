@@ -48,19 +48,18 @@ func (g Gotify) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	return []*http.Request{newReq}, nil
 }
 
-func (g Gotify) RespCode(resp *http.Response) int {
+func (g Gotify) RespCode(resp *http.Response) *utils.ProxyError {
 	//convert gotify message response to up resp
 	code, ok := map[int]int{
 		401: 404,
 		403: 404,
 		400: 502, //unknown how to handle gotify 400 TODO
-		200: 202,
+		200: 201,
 	}[resp.StatusCode]
 	if !ok {
-		log.Println("Gotify response unknown code", resp.StatusCode)
-		return 500
+		return utils.NewProxyErrS(500, "Gotify response unknown code")
 	}
-	return code
+	return utils.NewProxyErrS(code, "")
 }
 
 func (g *Gotify) Defaults() (failed bool) {
