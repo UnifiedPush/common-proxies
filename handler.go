@@ -148,7 +148,12 @@ func proxyHandler(h Proxy) HttpHandler {
 					break
 				}
 
-				code = utils.Max(code, h.RespCode(resp))
+				resperr := h.RespCode(resp)
+				code = utils.Max(code, resperr.Code)
+				if errHandle(err, w) {
+					respType = "err"
+					break
+				}
 				// logic here is that bigger code is worse and should be returned. If one request was ok (200) but one failed (400-500s), the larger one should be returned. It's not perfect, but 🤷
 
 				//read upto 4000 to be able to reuse conn then close
@@ -164,7 +169,7 @@ func proxyHandler(h Proxy) HttpHandler {
 			respType = "method not allowed"
 		}
 		w.WriteHeader(code)
-		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType)
+		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType, code)
 
 		return
 	}
@@ -172,8 +177,8 @@ func proxyHandler(h Proxy) HttpHandler {
 
 func errHandle(e error, w http.ResponseWriter) bool {
 	if e != nil {
-		if err, ok := e.(*utils.ProxyError); ok {
-			logV(err.S.Error())
+		if err, ok := e.(*utils.ProxyError); ok && (err.S.Error() != "") {
+			logV(err.Code, err.S.Error())
 			w.WriteHeader(err.Code)
 			return true
 

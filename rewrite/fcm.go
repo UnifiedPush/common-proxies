@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -106,39 +107,37 @@ type fcmResp struct {
 	}
 }
 
-func (f FCM) RespCode(resp *http.Response) int {
+func (f FCM) RespCode(resp *http.Response) *utils.ProxyError {
 	switch resp.StatusCode / 100 {
 	case 4: // 4xx
-		// error in common-proxies, not app server
-		return 500
+		return utils.NewProxyErrS(500, "Error with common-proxies auth or json, not app server, this should not be happening")
 	case 5: // 5xx
-		//delay, TODO implement forced exponential backoff in common-proxies
-		return 429
+		//TODO implement forced exponential backoff in common-proxies
+		return utils.NewProxyErrS(429, "slow down")
 	}
 
-	dec := json.NewDecoder(resp.Body)
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 5000))
 
 	out := fcmResp{}
-	err := dec.Decode(&out)
+	err := json.Unmarshal(b, &out)
 	if err != nil || len(out.Results) < 1 {
-		// already established it's not a 401, so dunno whats going on
-		return 502
+		//
+		return utils.NewProxyErrS(502, "dunno whats going on, resp is not json or len reults is zero %s", string(b))
 	}
 
 	givenErr := out.Results[0].Error
 
-	fmt.Printf("%s %d\n", givenErr, resp.StatusCode)
 	switch givenErr {
 	case "MissingRegistration", "InvalidRegistration", "NotRegistered", "MismatchSenderId":
-		return 404
+		return utils.NewProxyErrS(404, "Invalid Registration "+givenErr)
 		//case "InvalidParameters": // doesn't happen because 4xx is handled above
 	case "MessageTooBig", "InvalidDataKey", "InvalidTtl", "TopicsMessageRateExceeded", "InvalidApnsCredential": // this shouldn't happen, common-proxies has its own checks for size, common-proxies controls the keys, common-proxies doesn't send TTL, common-proxies doesn't deal in topics, idk apns
-		return 502
+		return utils.NewProxyErrS(502, "Something is very wrong "+givenErr)
 	case "Unavailable", "InternalServerError", "DeviceMessageRateExceeded":
 		//delay, TODO implement forced exponential backoff
-		return 429
+		return utils.NewProxyErrS(429, "slow down")
 	default:
-		return 201
+		return utils.NewProxyErrS(201, "")
 	}
 	//TODO log
 }

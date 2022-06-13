@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 type HttpHandler func(http.ResponseWriter, *http.Request)
@@ -15,7 +17,7 @@ type Gateway interface {
 
 type Proxy interface {
 	Handler
-	RespCode(*http.Response) int
+	RespCode(*http.Response) *utils.ProxyError
 	Req([]byte, http.Request) ([]*http.Request, error)
 }
 
