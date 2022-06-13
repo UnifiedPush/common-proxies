@@ -148,7 +148,7 @@ func (s *RewriteTests) TestGotify() {
 	handle(&gotify)(s.Resp, request)
 
 	//resp
-	s.Equal(202, s.Resp.Result().StatusCode, "request should be valid")
+	s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 
 	s.Require().NotNil(s.Call, "No request made")
 	//call
