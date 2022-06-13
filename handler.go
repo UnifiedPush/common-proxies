@@ -23,12 +23,12 @@ func init() {
 	paranoidClient, _, _ = phttp.NewClient()
 	paranoidClient.Timeout = 10 * time.Second
 	paranoidClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
-		return errors.New("NO")
+		return errors.New("NO redir")
 	}
 
 	normalClient = &http.Client{
 		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
-			return errors.New("NO")
+			return errors.New("NO redir")
 		},
 		Timeout: 2 * time.Second,
 	}
