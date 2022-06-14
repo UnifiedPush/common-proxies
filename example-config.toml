@@ -1,5 +1,6 @@
 listenAddr = "127.0.0.1:5000"
 verbose = true
+#UserAgentID = "yourservernamehostname.example.org by yourcontactwebsite.org"
 
 [gateway]
 	# AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",	"myinternaldomain.local"] 
@@ -8,7 +9,10 @@ verbose = true
 [rewrite]
 	[rewrite.fcm]
 		enabled = false
-		# key = ""
+		# key = "" # key for any hostname
+		[rewrite.fcm.Keys] # keys for specific hostnames
+			#"your.fcm.hostname.example.org" = "YOUR_FCM_KEY"
+			#"other.fcm.hostname.example.org" = "OTHER_FCM_KEY"
 	[rewrite.gotify]
 		enabled = false
 		#address = "gotify1.unifiedpush.org:443"
