@@ -7,7 +7,7 @@ local-docker:
 	$(DOCKER_CMD) make local
 all:
 	install -d bin
-	OUTPUT="${BUILD_DIR}/up-rewrite" ./go-build-all.sh	
+	GIT_CMT=$$(git describe --tags --always) OUTPUT="${BUILD_DIR}/up-rewrite" ./go-build-all.sh -ldflags '"-X github.com/karmanyaahm/up_rewrite/config.Version=$$GIT_CMT"'
 	cd bin; \
 		sha256sum * > sha256
 all-docker:
