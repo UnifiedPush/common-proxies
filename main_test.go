@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -178,6 +179,15 @@ func (s *RewriteTests) TestMatrixSend() {
 
 func (s *RewriteTests) TestMatrixResp() {
 	//TODO
+}
+
+func (s *RewriteTests) TestHealth() {
+	resp, err := http.Get(s.ts.URL + "/health")
+	s.Require().Nil(err)
+	s.Equal(200, resp.StatusCode)
+	read, err := io.ReadAll(resp.Body)
+	s.Require().Nil(err)
+	s.Contains(`OK`, string(read))
 }
 
 func myFancyContentGenerate() (string, string) {

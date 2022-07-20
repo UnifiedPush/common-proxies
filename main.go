@@ -45,6 +45,11 @@ func main() {
 			}
 		}
 	}
+
+	myRouter.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(config.Config.GetUserAgent() + " OK"))
+	})
 	myRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Endpoint doesn't exist\n"))
