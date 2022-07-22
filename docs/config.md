@@ -16,7 +16,9 @@ See [the example configuration file](../example-config.toml) for how a toml conf
 | Firebase Server Keys per hostname | rewrite.fcm.Keys       | none                      | map[hostname] = key | Specify the hostname that will be receiving requests and the key that request should be forwarded to.                                                               |
 | Allowed Gateway Hosts             | gateway.AllowedHosts   | UP_GATEWAY_ALLOWEDHOSTS   | string list         | See relevant section below                                                                                                                                          |
 
+## FCM Keys
 
+See <https://unifiedpush.org/developers/embedded_fcm/#firebase-setup> for more info on how to set up FCM keys properly.
 
 ## Gateway Allowed Hosts
 
