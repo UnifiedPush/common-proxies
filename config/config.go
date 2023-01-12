@@ -31,7 +31,7 @@ type Configuration struct {
 	Gateway struct {
 		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
 		Matrix       gateway.Matrix
-		WebPush1     gateway.WebPush1
+		WebPush      gateway.WebPush
 	}
 
 	Rewrite struct {
