@@ -33,7 +33,7 @@ func main() {
 		&Config.Rewrite.Gotify,
 		&Config.Rewrite.FCM,
 		&Config.Gateway.Matrix,
-		&Config.Gateway.WebPush1,
+		&Config.Gateway.WebPush,
 	}
 
 	myRouter := http.NewServeMux()
