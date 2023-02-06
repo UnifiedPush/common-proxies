@@ -31,7 +31,7 @@ type Configuration struct {
 	Gateway struct {
 		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
 		Matrix       gateway.Matrix
-		WebPush      gateway.WebPush
+		Generic      gateway.Generic
 	}
 
 	Rewrite struct {
@@ -84,5 +84,6 @@ func Defaults(c *Configuration) (failed bool) {
 	c.MaxUPSize = 4096 // this forces it to be this, ignoring user config
 	return c.Rewrite.Gotify.Defaults() ||
 		c.Rewrite.FCM.Defaults() ||
-		c.Gateway.Matrix.Defaults()
+		c.Gateway.Matrix.Defaults() ||
+		c.Gateway.Generic.Defaults()
 }
