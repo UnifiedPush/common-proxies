@@ -38,10 +38,9 @@ func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	encodedEndpoint := strings.SplitN(myurl, "/", 4)[2]
 	endpointBytes, err := base64.RawURLEncoding.DecodeString(encodedEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("TODO better msg bad endpoint base64: %w", err)
+		return nil, fmt.Errorf("Encoded endpoint not valid base64: %w", err)
 	}
 	endpoint := string(endpointBytes)
-	fmt.Println(endpoint)
 
 	// append WebPush draft 4 (ECE Draft 3) style "aesgcm" headers to the body, so UnifiedPush apps can recieve them
 	if req.Header.Get("content-encoding") == "aesgcm" {
@@ -58,7 +57,7 @@ func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	// Basic checks are needed to protect against low-effort spammers
 	newReq, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return nil, err //TODO
+		return nil, err
 	}
 	return []*http.Request{newReq}, nil
 }
