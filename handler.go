@@ -174,6 +174,7 @@ func proxyHandler(h Proxy) HttpHandler {
 			respType = "method not allowed"
 		}
 		w.WriteHeader(code)
+		w.Header().Add("TTL", "0")
 		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType, code)
 
 		return
