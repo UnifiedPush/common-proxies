@@ -34,7 +34,7 @@ func init() {
 	}
 }
 
-//function that runs on (almost) every http request
+// function that runs on (almost) every http request
 func bothHandler(f HttpHandler) HttpHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ConfigLock.RLock()
@@ -52,6 +52,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 			reqs     []*http.Request
 		)
 
+	topHandler:
 		switch r.Method {
 		case http.MethodGet:
 			w.Write(h.Get())
@@ -73,13 +74,17 @@ func gatewayHandler(h Gateway) HttpHandler {
 				nwritten += req.ContentLength
 
 				req.Header.Add("User-Agent", Config.GetUserAgent())
+
+				thisClient := paranoidClient
 				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
-					CheckIfRewriteProxy(req.URL.String(), normalClient)
-					resps[i], err = normalClient.Do(req)
-				} else {
-					CheckIfRewriteProxy(req.URL.String(), paranoidClient)
-					resps[i], err = paranoidClient.Do(req)
+					thisClient = normalClient
 				}
+				if !CheckIfRewriteProxy(req.URL.String(), thisClient) {
+					errHandle(utils.NewProxyErrS(403, "Target is not a UP Server"), w)
+					respType = "err, not UP endpoint"
+					break topHandler
+				}
+				resps[i], err = thisClient.Do(req)
 
 				if err != nil {
 					resps[i] = nil
