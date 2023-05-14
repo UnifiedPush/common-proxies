@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -43,6 +45,7 @@ func (s *RewriteTests) SetupTest() {
 
 	u, _ := url.Parse(s.ts.URL)
 	config.Config.Gateway.AllowedHosts = []string{u.Host}
+	ForceBypassValidProviderCheck(s.ts.URL, "http://temp.test")
 
 	s.resetTest()
 }
@@ -62,6 +65,7 @@ const goodFCMResponse = `{"Results": [{"Error":""}]}`
 
 func (s *RewriteTests) TestFCM() {
 	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL}
+	rand.Seed(0)
 
 	myFancyContent, myFancyContent64 := myFancyContentGenerate()
 	cases := [][]string{
@@ -69,7 +73,7 @@ func (s *RewriteTests) TestFCM() {
 		{"FCMD", "/?token=a&app=a", `{"to":"a","data":{"app":"a","body":"content"}}`, `content`},
 		{"FCMv2", "/?token=a&instance=myinst&v2", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`, `content`},
 		{"FCMv2-2", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`, `content`},
-		{"FCMv2-3", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"` + myFancyContent64[3000:] + `","i":"myinst","m":"5577006791947779411","s":"2"}}`, myFancyContent}, // this test only tests the second value because that's much easier than testing for the first one due to the architecture of this file. Someday I'll fix that TODO.
+		{"FCMv2-3", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"` + myFancyContent64[3000:] + `","i":"myinst","m":"8717895732742165506","s":"2"}}`, myFancyContent}, // this test only tests the second value because that's much easier than testing for the first one due to the architecture of this file. Someday I'll fix that TODO.
 	}
 
 	for _, i := range cases {
@@ -179,6 +183,28 @@ func (s *RewriteTests) TestMatrixSend() {
 
 func (s *RewriteTests) TestMatrixResp() {
 	//TODO
+}
+
+func (s *RewriteTests) TestGenericGateway() {
+	gw := gateway.Generic{}
+
+	content := `this is   
+	
+my msg`
+	request := httptest.NewRequest("POST", "/generic/"+base64.RawURLEncoding.EncodeToString([]byte(s.ts.URL)), bytes.NewBufferString(content))
+	request.Header.Add("cOntent-Encoding", "aesgcm")
+	request.Header.Add("cryPTo-KEY", `dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"`)
+	request.Header.Add("EncRYPTION", `Encryption: salt="lngarbyKfMoi9Z75xYXmkg"`)
+	handle(&gw)(s.Resp, request)
+
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	s.Equal(`this is   
+	
+my msg
+dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"
+Encryption: salt="lngarbyKfMoi9Z75xYXmkg"
+aesgcm`, string(s.CallBody), "body should match")
+
 }
 
 func (s *RewriteTests) TestHealth() {
