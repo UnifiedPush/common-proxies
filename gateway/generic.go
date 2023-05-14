@@ -35,7 +35,10 @@ func (m Generic) Get() []byte {
 
 func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	myurl := req.URL.EscapedPath()
-	encodedEndpoint := strings.SplitN(myurl, "/", 4)[2]
+	encodedEndpoint := ""
+	if encodedEndpoints := strings.SplitN(myurl, "/", 4); len(encodedEndpoints) >= 3 {
+		encodedEndpoint = encodedEndpoints[2]
+	}
 	endpointBytes, err := base64.RawURLEncoding.DecodeString(encodedEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("Encoded endpoint not valid base64: %w", err)
@@ -63,7 +66,12 @@ func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
 }
 
 func (Generic) Resp(r []*http.Response, w http.ResponseWriter) {
-	w.WriteHeader(r[0].StatusCode)
+	if r[0] != nil {
+		w.WriteHeader(r[0].StatusCode)
+	} else {
+		w.WriteHeader(500)
+	}
+	w.Header().Add("TTL", "0")
 }
 
 func (m *Generic) Defaults() (failed bool) {

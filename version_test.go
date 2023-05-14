@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func ForceBypassValidProviderCheck(host ...string) {
+	for _, i := range host {
+		allowedProxies.Set(i, true, 1000*time.Minute)
+	}
+}
+
 func TestCheckRewriteProxy(t *testing.T) {
 	c := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

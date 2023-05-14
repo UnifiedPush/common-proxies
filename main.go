@@ -20,6 +20,10 @@ var configFile = flag.String("c", "config.toml", "path to toml file for config")
 // various translaters
 var handlers = []Handler{}
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+}
+
 func main() {
 	flag.Parse()
 	err := ParseConf(*configFile)
