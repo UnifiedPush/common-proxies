@@ -36,6 +36,7 @@ func main() {
 	handlers = []Handler{
 		&Config.Rewrite.Gotify,
 		&Config.Rewrite.FCM,
+		&Config.Rewrite.Draft4,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,
 	}
