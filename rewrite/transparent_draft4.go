@@ -48,11 +48,7 @@ func (proxyImpl TransparentDraft4) Req(body []byte, req http.Request) ([]*http.R
 				return nil, err
 			}
 		}
-		bodyBytes, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			return nil, err
-		}
-		_, err = rewrittenBody.Write(bodyBytes)
+		_, err = rewrittenBody.Write(body)
 		if err != nil {
 			return nil, err
 		}
@@ -62,8 +58,11 @@ func (proxyImpl TransparentDraft4) Req(body []byte, req http.Request) ([]*http.R
 		}
 		return []*http.Request{rewrittenRequest}, nil
 	} else {
-		req.URL = &url
-		return []*http.Request{&req}, nil
+		request, err := http.NewRequest(req.Method, url.String(), bytes.NewReader(body))
+		if err != nil {
+			return nil, err
+		}
+		return []*http.Request{request}, nil
 	}
 }
 
