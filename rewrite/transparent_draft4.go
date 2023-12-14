@@ -56,24 +56,25 @@ func (proxyImpl TransparentDraft4) Req(body []byte, req http.Request) ([]*http.R
 		if err != nil {
 			return nil, err
 		}
+		rewrittenRequest.Header = req.Header.Clone()
 		return []*http.Request{rewrittenRequest}, nil
 	} else {
 		request, err := http.NewRequest(req.Method, url.String(), bytes.NewReader(body))
 		if err != nil {
 			return nil, err
 		}
+		request.Header = req.Header.Clone()
 		return []*http.Request{request}, nil
 	}
 }
 
 func (proxyImpl TransparentDraft4) RespCode(resp *http.Response) *utils.ProxyError {
-	defer resp.Body.Close()
-	bodyString, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
-		return utils.NewProxyErrS(resp.StatusCode, string(bodyString))
-	} else {
 		return utils.NewProxyError(500, err)
 	}
+	return utils.NewProxyErrS(resp.StatusCode, string(bodyBytes))
 }
 
 func (proxyImpl *TransparentDraft4) Defaults() (failed bool) {
