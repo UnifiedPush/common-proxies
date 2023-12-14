@@ -36,9 +36,9 @@ func main() {
 	handlers = []Handler{
 		&Config.Rewrite.Gotify,
 		&Config.Rewrite.FCM,
-		&Config.Rewrite.TransparentDraft4,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,
+		&Config.Gateway.TransparentDraft4,
 	}
 
 	myRouter := http.NewServeMux()

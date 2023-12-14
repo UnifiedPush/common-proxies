@@ -29,15 +29,15 @@ type Configuration struct {
 	UserAgentID string `env:"UP_UAID"`
 
 	Gateway struct {
-		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
-		Matrix       gateway.Matrix
-		Generic      gateway.Generic
+		AllowedHosts      []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
+		Matrix            gateway.Matrix
+		Generic           gateway.Generic
+		TransparentDraft4 gateway.TransparentDraft4
 	}
 
 	Rewrite struct {
-		FCM               rewrite.FCM
-		Gotify            rewrite.Gotify
-		TransparentDraft4 rewrite.TransparentDraft4
+		FCM    rewrite.FCM
+		Gotify rewrite.Gotify
 	}
 }
 
@@ -84,7 +84,7 @@ func ParseConf(location string) error {
 func Defaults(c *Configuration) (failed bool) {
 	c.MaxUPSize = 4096 // this forces it to be this, ignoring user config
 	return c.Rewrite.Gotify.Defaults() ||
-		c.Rewrite.TransparentDraft4.Defaults() ||
+		c.Gateway.TransparentDraft4.Defaults() ||
 		c.Rewrite.FCM.Defaults() ||
 		c.Gateway.Matrix.Defaults() ||
 		c.Gateway.Generic.Defaults()

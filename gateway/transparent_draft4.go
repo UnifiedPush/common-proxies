@@ -1,4 +1,4 @@
-package rewrite
+package gateway
 
 import (
 	"bytes"
@@ -6,15 +6,15 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 type TransparentDraft4 struct {
-	Enabled  bool   `env:"UP_REWRITE_TRANSPARENT_DRAFT4_ENABLE"`
-	Address  string `env:"UP_REWRITE_TRANSPARENT_DRAFT4_ADDRESS"`
-	Scheme   string `env:"UP_REWRITE_TRANSPARENT_DRAFT4_SCHEME"`
-	BindPath string `env:"UP_REWRITE_TRANSPARENT_DRAFT4_PATH"`
+	Enabled          bool   `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ENABLE"`
+	Address          string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ADDRESS"`
+	Scheme           string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_SCHEME"`
+	BindPath         string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_PATH"`
+	GetPayloadString string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_GETPAYLOAD"`
+	GetPayload       []byte
 }
 
 func (proxyImpl TransparentDraft4) Path() string {
@@ -25,6 +25,10 @@ func (proxyImpl TransparentDraft4) Path() string {
 		return proxyImpl.BindPath
 	}
 	return ""
+}
+
+func (proxyImpl TransparentDraft4) Get() []byte {
+	return proxyImpl.GetPayload
 }
 
 func (proxyImpl TransparentDraft4) Req(body []byte, req http.Request) ([]*http.Request, error) {
@@ -68,13 +72,19 @@ func (proxyImpl TransparentDraft4) Req(body []byte, req http.Request) ([]*http.R
 	}
 }
 
-func (proxyImpl TransparentDraft4) RespCode(resp *http.Response) *utils.ProxyError {
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+func (proxyImpl TransparentDraft4) Resp(responseArray []*http.Response, gatewayResponse http.ResponseWriter) {
+	response := responseArray[0]
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
 	if err != nil {
-		return utils.NewProxyError(500, err)
+		gatewayResponse.Write([]byte(err.Error()))
+		gatewayResponse.WriteHeader(500)
 	}
-	return utils.NewProxyErrS(resp.StatusCode, string(bodyBytes))
+	gatewayResponse.Write(bodyBytes)
+	for key, value := range response.Header {
+		gatewayResponse.Header()[http.CanonicalHeaderKey(key)] = value
+	}
+	gatewayResponse.WriteHeader(response.StatusCode)
 }
 
 func (proxyImpl *TransparentDraft4) Defaults() (failed bool) {
@@ -90,12 +100,20 @@ func (proxyImpl *TransparentDraft4) Defaults() (failed bool) {
 	if len(proxyImpl.Address) <= 0 {
 		log.Println("Endpoint Address cannot be empty")
 		failed = true
+		return
 	}
 
 	proxyImpl.Scheme = strings.ToLower(proxyImpl.Scheme)
 	if !(proxyImpl.Scheme == "http" || proxyImpl.Scheme == "https") {
 		log.Println("Invalid Endpoint Scheme")
 		failed = true
+		return
 	}
+
+	if proxyImpl.GetPayloadString == "" {
+		proxyImpl.GetPayloadString = `{"unifiedpush":{"version":1}}`
+	}
+	proxyImpl.GetPayload = []byte(proxyImpl.GetPayloadString)
+
 	return
 }
