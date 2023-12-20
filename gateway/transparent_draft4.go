@@ -9,12 +9,11 @@ import (
 )
 
 type TransparentDraft4 struct {
-	Enabled          bool   `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ENABLE"`
-	Address          string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ADDRESS"`
-	Scheme           string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_SCHEME"`
-	BindPath         string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_PATH"`
-	GetPayloadString string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_GETPAYLOAD"`
-	GetPayload       []byte
+	Enabled    bool   `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ENABLE"`
+	Address    string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_ADDRESS"`
+	Scheme     string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_SCHEME"`
+	BindPath   string `env:"UP_GATEWAY_TRANSPARENT_DRAFT4_PATH"`
+	GetPayload []byte
 }
 
 func (proxyImpl TransparentDraft4) Path() string {
@@ -110,10 +109,7 @@ func (proxyImpl *TransparentDraft4) Defaults() (failed bool) {
 		return
 	}
 
-	if proxyImpl.GetPayloadString == "" {
-		proxyImpl.GetPayloadString = `{"unifiedpush":{"version":1}}`
-	}
-	proxyImpl.GetPayload = []byte(proxyImpl.GetPayloadString)
+	proxyImpl.GetPayload = []byte(`{"unifiedpush":{"version":1}}`)
 
 	return
 }
