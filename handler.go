@@ -115,7 +115,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 
 func proxyHandler(h Proxy) HttpHandler {
 
-	versionWrite := versionHandler()
+	versionWrite := utils.VersionHandler()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var nread, code int = 0, 200
 		var respType string
