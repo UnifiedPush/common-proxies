@@ -38,6 +38,7 @@ func main() {
 		&Config.Rewrite.FCM,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,
+		&Config.Gateway.TransparentDraft4,
 	}
 
 	myRouter := http.NewServeMux()

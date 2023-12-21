@@ -71,10 +71,3 @@ func TestRewriteProxyCache(t *testing.T) {
 }
 
 //TODO test negative cache (would require mock of duration)
-
-func TestVersionHandler(t *testing.T) {
-	rec := httptest.NewRecorder()
-	versionHandler()(rec)
-
-	assert.Equal(t, `{"unifiedpush":{"version":1}}`, rec.Body.String(), "version handler is wrong")
-}

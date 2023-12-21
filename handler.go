@@ -109,16 +109,13 @@ func gatewayHandler(h Gateway) HttpHandler {
 			prints = append(prints, hosts...)
 		}
 		log.Println(prints...)
-
-		return
-
 	}
 
 }
 
 func proxyHandler(h Proxy) HttpHandler {
 
-	versionWrite := versionHandler()
+	versionWrite := utils.VersionHandler()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var nread, code int = 0, 200
 		var respType string
@@ -176,8 +173,6 @@ func proxyHandler(h Proxy) HttpHandler {
 		w.WriteHeader(code)
 		w.Header().Add("TTL", "0")
 		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType, code)
-
-		return
 	}
 }
 
