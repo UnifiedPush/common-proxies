@@ -7,25 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/karmanyaahm/up_rewrite/utils"
 	"github.com/patrickmn/go-cache"
 )
-
-type UP struct {
-	Version int `json:"version"`
-}
-type VHandler struct {
-	UnifiedPush UP `json:"unifiedpush"`
-}
-
-func versionHandler() func(http.ResponseWriter) {
-	b, err := json.Marshal(VHandler{UP{1}})
-	if err != nil {
-		panic(err) //should be const so can panic np
-	}
-	return func(w http.ResponseWriter) {
-		w.Write(b)
-	}
-}
 
 var allowedProxies *cache.Cache
 
@@ -71,7 +55,7 @@ func actuallyDecideIfAllowed(url string, c *http.Client) bool {
 		return false
 	}
 
-	v := VHandler{}
+	v := utils.VHandler{}
 	err = json.Unmarshal(body, &v)
 	if err != nil {
 		return false
