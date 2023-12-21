@@ -2,10 +2,13 @@ package gateway
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
 type TransparentDraft4 struct {
@@ -109,7 +112,13 @@ func (proxyImpl *TransparentDraft4) Defaults() (failed bool) {
 		return
 	}
 
-	proxyImpl.GetPayload = []byte(`{"unifiedpush":{"version":1}}`)
+	var err error
+	proxyImpl.GetPayload, err = json.Marshal(utils.DefaultUnifiedPushVHandler)
+	if err != nil {
+		log.Println(err)
+		failed = true
+		return
+	}
 
 	return
 }
