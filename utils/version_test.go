@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"testing"
 
 	"net/http/httptest"
@@ -13,4 +14,12 @@ func TestVersionHandler(t *testing.T) {
 	VersionHandler()(rec)
 
 	assert.Equal(t, `{"unifiedpush":{"version":1}}`, rec.Body.String(), "version handler is wrong")
+
+	payload, err := json.Marshal(VHandler{UP{1, ""}})
+	assert.Nil(t, err, "error should be nil")
+	assert.Equal(t, `{"unifiedpush":{"version":1}}`, string(payload), "version handler is wrong")
+
+	payload, err = json.Marshal(VHandler{UP{0, "aesgcm"}})
+	assert.Nil(t, err, "error should be nil")
+	assert.Equal(t, `{"unifiedpush":{"gateway":"aesgcm"}}`, string(payload), "version handler is wrong")
 }
