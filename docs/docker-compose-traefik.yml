@@ -42,7 +42,7 @@ services:
       - "traefik.http.routers.commonproxies-tls.entrypoints=websecure"
       - "traefik.http.routers.commonproxies-tls.tls=true"
       - "traefik.http.routers.commonproxies-tls.tls.certresolver=myresolver"
-      - "traefik.http.routers.commonproxies-tls.rule=Host(`${LISTEN_DOMAIN:?}`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`)"
+      - "traefik.http.routers.commonproxies-tls.rule=Host(`${LISTEN_DOMAIN:?}`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`, `/aesgcm`)"
       - "traefik.http.routers.commonproxies-tls.service=commonproxies-tls-service"
       - "traefik.http.services.commonproxies-tls-service.loadbalancer.server.port=5000"
 
