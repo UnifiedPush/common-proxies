@@ -3,6 +3,7 @@ package gateway
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,27 +11,26 @@ import (
 	"github.com/karmanyaahm/up_rewrite/utils"
 )
 
-// A Gateway that hanldles any URL in /generic/ENDPOINT_ENCODED/*
+// THIS IS CURRENTLY DISABLED, it's not initialized any other part of common proxies
+
+// A Gateway that handles any URL in /generic/ENDPOINT_ENCODED/*
 // ENDPOINT_ENCODED is just a base64 encoded endpoint
 // the rest of common proxies checks that the endpoint is a real UnifiedPush server before pushing to it
 // The path strategy is useful for Nextcloud
-// and aesgcm style WebPush applications
 
 // NOTE: I'm using RawURLEncoded Base64 here, i.e. the URL Encoded Character set (it's going in a URL after all) and no padding (avoid unnecessary chars). That is also what WebPush most commonly uses.
 type Generic struct {
-	Enabled bool `env:"UP_GATEWAY_GENERIC_ENABLE"`
-	path    string
+	Enabled   bool `env:"UP_GATEWAY_GENERIC_ENABLE"`
+	path      string
+	discovery []byte
 }
 
 func (m Generic) Path() string {
-	if m.Enabled {
-		return m.path
-	}
-	return ""
+	return m.path
 }
 
 func (m Generic) Get() []byte {
-	return []byte(``)
+	return m.discovery
 }
 
 func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
@@ -45,17 +45,6 @@ func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
 	}
 	endpoint := string(endpointBytes)
 
-	// append WebPush draft 4 (ECE Draft 3) style "aesgcm" headers to the body, so UnifiedPush apps can recieve them
-	if req.Header.Get("content-encoding") == "aesgcm" {
-		pubkey := req.Header.Get("crypto-key")
-		salt := req.Header.Get("encryption")
-
-		if len(pubkey) < 65 || len(salt) < 16 { // approx values
-			return nil, utils.NewProxyErrS(400, "Not real WebPush: Headers too short")
-		}
-		body = append(body, []byte("\n"+pubkey+"\n"+salt+"\naesgcm")...)
-	}
-	// check that it is either aesgcm, aes128gcm or nextcloud??
 	// How would I identify Nextcloud requests without parsing JSON?
 	// Basic checks are needed to protect against low-effort spammers
 	newReq, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
@@ -75,6 +64,16 @@ func (Generic) Resp(r []*http.Response, w http.ResponseWriter) {
 }
 
 func (m *Generic) Defaults() (failed bool) {
-	m.path = "/generic/"
+	if m.Enabled {
+		m.path = "/generic/"
+
+		vhandler := utils.VHandler{utils.UP{0, "generic"}}
+		var err error
+		m.discovery, err = json.Marshal(vhandler)
+		if err != nil {
+			panic(err) // running at configure time
+		}
+	}
+
 	return
 }
