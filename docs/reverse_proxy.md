@@ -19,7 +19,7 @@ server {
 	server_name gotify.example.com;
 
 	# this sends traffic to common-proxies
-	location ~ ^/(FCM|UP|_matrix) {	
+	location ~ ^/(FCM|UP|_matrix|aesgcm) {	
 		proxy_pass			http://127.0.0.1:5000;
 	}
 
@@ -58,6 +58,7 @@ ServerName gotify.example.org
 ProxyPass "/_matrix" http://127.0.0.1:5000/_matrix
 ProxyPass "/UP" http://127.0.0.1:5000/UP
 ProxyPass "/FCM" http://127.0.0.1:5000/FCM
+ProxyPass "/aesgcm" http://127.0.0.1:5000/aesgcm
 
 Keepalive On
 
@@ -80,7 +81,7 @@ This snippet can be placed in a Caddyfile.
 ```caddy
 gotify.example.org {
     @rewrite_proxy {
-        path /UP* /_matrix*
+        path /UP* /_matrix* /aesgcm*
     }
     reverse_proxy @rewrite_proxy 127.0.0.1:5000
 
@@ -100,7 +101,7 @@ Here is a toml example:
 [http.routers]
   [http.routers.commonproxies]
     entryPoints = ["websecure"]
-    rule = "Host(`gotify.example.org`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`)"
+    rule = "Host(`gotify.example.org`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`, `/aesgcm`)"
     service = "commonproxies-service"
 
     [http.routers.commonproxies.tls]

@@ -15,6 +15,7 @@ See [the example configuration file](../example-config.toml) for how a toml conf
 | Firebase Server Key for FCM       | rewrite.fcm.key        | UP_REWRITE_FCM_KEY        | string              | An FCM request to any hostname will be forwarded with this key. Not recommended, use per hostname keys if possible.                                                 |
 | Firebase Server Keys per hostname | rewrite.fcm.Keys       | none                      | map[hostname] = key | Specify the hostname that will be receiving requests and the key that request should be forwarded to.                                                               |
 | Allowed Gateway Hosts             | gateway.AllowedHosts   | UP_GATEWAY_ALLOWEDHOSTS   | string list         | See relevant section below                                                                                                                                          |
+| Enable AESGCM Gateway             | gateway.aesgcm.enable   | UP_GATEWAY_AESGCM_ENABLE   | boolean        | Enable the AESGCM gateway on /aesgcm to convert old webpush requests to UnifiedPush compatible ones                                                                                                                                          |
 
 ## FCM Keys
 

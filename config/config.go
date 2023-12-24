@@ -31,7 +31,7 @@ type Configuration struct {
 	Gateway struct {
 		AllowedHosts []string `env:"UP_GATEWAY_ALLOWEDHOSTS"`
 		Matrix       gateway.Matrix
-		Generic      gateway.Generic
+		Aesgcm      gateway.Aesgcm
 	}
 
 	Rewrite struct {
@@ -85,5 +85,5 @@ func Defaults(c *Configuration) (failed bool) {
 	return c.Rewrite.Gotify.Defaults() ||
 		c.Rewrite.FCM.Defaults() ||
 		c.Gateway.Matrix.Defaults() ||
-		c.Gateway.Generic.Defaults()
+		c.Gateway.Aesgcm.Defaults()
 }
