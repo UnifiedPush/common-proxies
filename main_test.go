@@ -15,6 +15,7 @@ import (
 	"github.com/karmanyaahm/up_rewrite/gateway"
 	"github.com/karmanyaahm/up_rewrite/rewrite"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/oauth2"
 )
 
 func init() {
@@ -61,19 +62,43 @@ func (s *RewriteTests) TearDownTest() {
 	s.ts.Close()
 }
 
+type FakeTokenSource struct {
+	token string
+}
+
+func (s FakeTokenSource) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{
+		AccessToken:  "faketoken_" + s.token,
+		TokenType:    "fake",
+		RefreshToken: "",
+	}, nil
+}
+
+func testConfigFactory(apiUrl string) rewrite.FCMConfigFactory {
+	return func(jsonPath string) (config *rewrite.FCMConfig, error error) {
+		return &rewrite.FCMConfig{
+			ApiUrl:      apiUrl,
+			TokenSource: FakeTokenSource{token: jsonPath},
+		}, nil
+	}
+}
+
 const goodFCMResponse = `{"Results": [{"Error":""}]}`
 
 func (s *RewriteTests) TestFCM() {
-	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL}
+	fcm := rewrite.FCM{
+		CredentialsPath: "testproject",
+		ConfigFactory:   testConfigFactory(s.ts.URL),
+	}
 	rand.Seed(0)
 
 	myFancyContent, myFancyContent64 := myFancyContentGenerate()
 	cases := [][]string{
-		{"EFCMD", "/?token=a&instance=b", `{"to":"a","data":{"body":"content","instance":"b"}}`, `content`},
-		{"FCMD", "/?token=a&app=a", `{"to":"a","data":{"app":"a","body":"content"}}`, `content`},
-		{"FCMv2", "/?token=a&instance=myinst&v2", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`, `content`},
-		{"FCMv2-2", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}`, `content`},
-		{"FCMv2-3", "/?v2&token=a&instance=myinst", `{"to":"a","data":{"b":"` + myFancyContent64[3000:] + `","i":"myinst","m":"8717895732742165506","s":"2"}}`, myFancyContent}, // this test only tests the second value because that's much easier than testing for the first one due to the architecture of this file. Someday I'll fix that TODO.
+		{"EFCMD", "/?token=a&instance=b", `{"message":{"token":"a","data":{"body":"content","instance":"b"}}}`, `content`},
+		{"FCMD", "/?token=a&app=a", `{"message":{"token":"a","data":{"app":"a","body":"content"}}}`, `content`},
+		{"FCMv2", "/?token=a&instance=myinst&v2", `{"message":{"token":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}}`, `content`},
+		{"FCMv2-2", "/?v2&token=a&instance=myinst", `{"message":{"token":"a","data":{"b":"Y29udGVudA==","i":"myinst"}}}`, `content`},
+		{"FCMv2-3", "/?v2&token=a&instance=myinst", `{"message":{"token":"a","data":{"b":"` + myFancyContent64[3000:] + `","i":"myinst","m":"8717895732742165506","s":"2"}}}`, myFancyContent}, // this test only tests the second value because that's much easier than testing for the first one due to the architecture of this file. Someday I'll fix that TODO.
 	}
 
 	for _, i := range cases {
@@ -86,7 +111,7 @@ func (s *RewriteTests) TestFCM() {
 
 		s.Require().NotNil(s.Call, "No request made")
 		//call
-		s.Equal("key=testkey", s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal("Bearer faketoken_testproject", s.Call.Header.Get("Authorization"), "header not set")
 		if s.T().Failed() {
 			println("that was " + i[0])
 		}
@@ -95,38 +120,45 @@ func (s *RewriteTests) TestFCM() {
 	}
 }
 
-func (s *RewriteTests) TestFCMKeys() {
-	fcm := rewrite.FCM{Key: "testkey", APIURL: s.ts.URL, Keys: map[string]string{"1.invalid": "key2", "2.invalid": "key3"}}
+func (s *RewriteTests) TestFCMCredentialsPaths() {
+	fcm := rewrite.FCM{
+		CredentialsPath:  "testproject",
+		ConfigFactory:    testConfigFactory(s.ts.URL),
+		CredentialsPaths: map[string]string{"1.invalid": "project2", "2.invalid": "project3"},
+	}
 
 	cases := [][]string{
-		{"http://example.invalid?v2", "testkey"},
-		{"http://1.invalid?v2", "key2"},
-		{"http://2.invalid?v2", "key3"},
-		{"http://random.test?v2", "testkey"},
+		{"http://example.invalid?v2", "testproject"},
+		{"http://1.invalid?v2", "project2"},
+		{"http://2.invalid?v2", "project3"},
+		{"http://random.test?v2", "testproject"},
 	}
 	for _, i := range cases {
 		s.resetTest()
 		s.resp = []byte(goodFCMResponse)
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
-		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal("Bearer faketoken_"+i[1], s.Call.Header.Get("Authorization"), "header not set")
 		s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 	}
 	s.Call = nil
 	s.Resp = httptest.NewRecorder()
 
 	// This case is where there is no 'default' key, only host specific keys
-	//Key omitted for testing
-	fcm = rewrite.FCM{APIURL: s.ts.URL, Keys: map[string]string{"1.invalid": "key2", "2.invalid": "key3"}}
+	//ProjectID omitted for testings
+	fcm = rewrite.FCM{
+		ConfigFactory:    testConfigFactory(s.ts.URL),
+		CredentialsPaths: map[string]string{"1.invalid": "project2", "2.invalid": "project3"},
+	}
 
 	cases = [][]string{
-		{"http://1.invalid?v2", "key2"},
-		{"http://2.invalid?v2", "key3"},
+		{"http://1.invalid?v2", "project2"},
+		{"http://2.invalid?v2", "project3"},
 	}
 	for _, i := range cases {
 		s.resetTest()
 		s.resp = []byte(goodFCMResponse)
 		handle(&fcm)(s.Resp, httptest.NewRequest("POST", i[0], bytes.NewBufferString("content")))
-		s.Equal("key="+i[1], s.Call.Header.Get("Authorization"), "header not set")
+		s.Equal("Bearer faketoken_"+i[1], s.Call.Header.Get("Authorization"), "header not set")
 		s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 	}
 	s.Call = nil

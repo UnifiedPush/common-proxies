@@ -1,23 +1,66 @@
 package rewrite
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 
 	"github.com/karmanyaahm/up_rewrite/utils"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
+type FCMConfigFactory func(credentialsPath string) (config *FCMConfig, error error)
+
+type FCMConfig struct {
+	TokenSource oauth2.TokenSource
+	ApiUrl      string
+}
+
 type FCM struct {
-	Enabled bool   `env:"UP_REWRITE_FCM_ENABLE"`
-	Key     string `env:"UP_REWRITE_FCM_KEY"`
-	Keys    map[string]string
-	APIURL  string
+	Enabled          bool   `env:"UP_REWRITE_FCM_ENABLE"`
+	CredentialsPath  string `env:"UP_REWRITE_FCM_CREDENTIALS_PATH"`
+	CredentialsPaths map[string]string
+	ConfigFactory    FCMConfigFactory
+}
+
+var googleConfigs = map[string]FCMConfig{}
+var googleConfigsLock = sync.RWMutex{}
+
+func googleConfigFactory(credentialsPath string) (config *FCMConfig, error error) {
+	googleConfigsLock.Lock()
+	defer googleConfigsLock.Unlock()
+
+	existing, exists := googleConfigs[credentialsPath]
+	if exists {
+		return &existing, nil
+	}
+
+	jsonData, err := ioutil.ReadFile(credentialsPath)
+	if err != nil {
+		return nil, utils.NewProxyError(500, errors.New("could not load credentials file"))
+	}
+
+	conf, err := google.CredentialsFromJSON(context.Background(), jsonData, "https://www.googleapis.com/auth/firebase.messaging")
+	if err != nil {
+		log.Println(err)
+		return nil, utils.NewProxyError(500, errors.New("could not create FCM credential source"))
+	}
+
+	source := FCMConfig{
+		TokenSource: oauth2.ReuseTokenSource(nil, conf.TokenSource),
+		ApiUrl:      fmt.Sprintf("https://fcm.googleapis.com/v1/projects/%s/messages:send", conf.ProjectID),
+	}
+	googleConfigs[credentialsPath] = source
+	return &source, nil
 }
 
 func (f FCM) Path() string {
@@ -28,24 +71,34 @@ func (f FCM) Path() string {
 }
 
 type fcmData struct {
-	To   string            `json:"to"`
-	Data map[string]string `json:"data"`
+	Token string            `json:"token"`
+	Data  map[string]string `json:"data"`
 }
 
-func (f FCM) makeReqFromValues(fcmdata fcmData, key string) (newReq *http.Request, err error) {
-	newBody, err := utils.EncodeJSON(fcmdata)
+type fcmPayload struct {
+	Message fcmData `json:"message"`
+}
+
+func (f FCM) makeReqFromValues(data fcmData, config *FCMConfig) (newReq *http.Request, err error) {
+	newBody, err := utils.EncodeJSON(fcmPayload{Message: data})
 	if err != nil {
 		fmt.Println(err)
 		return nil, err //TODO
 	}
 
-	newReq, err = http.NewRequest(http.MethodPost, f.APIURL, newBody)
+	newReq, err = http.NewRequest(http.MethodPost, config.ApiUrl, newBody)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := config.TokenSource.Token()
+
 	if err != nil {
 		return nil, err
 	}
 
 	newReq.Header.Set("Content-Type", "application/json")
-	newReq.Header.Set("Authorization", "key="+key)
+	newReq.Header.Set("Authorization", "Bearer "+token.AccessToken)
 	return
 }
 
@@ -55,11 +108,17 @@ func (f FCM) Req(body []byte, req http.Request) (requests []*http.Request, error
 	app := req.URL.Query().Get("app")
 	isV2 := req.URL.Query().Has("v2")
 
-	key := f.Key
-	if k, ok := f.Keys[req.Host]; ok {
-		key = k
-	} else if key == "" {
+	credentialsPath := f.CredentialsPath
+	if path, ok := f.CredentialsPaths[req.Host]; ok {
+		credentialsPath = path
+	} else if credentialsPath == "" {
 		return nil, utils.NewProxyError(404, errors.New("Endpoint doesn't exist. Wrong Host "+req.Host))
+	}
+
+	config, err := f.ConfigFactory(credentialsPath)
+
+	if err != nil {
+		return nil, utils.NewProxyError(500, err)
 	}
 
 	var data map[string]string
@@ -84,14 +143,14 @@ func (f FCM) Req(body []byte, req http.Request) (requests []*http.Request, error
 		}
 	}
 
-	myreq, err := f.makeReqFromValues(fcmData{To: token, Data: data}, key)
+	myreq, err := f.makeReqFromValues(fcmData{Token: token, Data: data}, config)
 	if err != nil {
 		return nil, err
 	}
 	requests = append(requests, myreq)
 
 	if data2 != nil {
-		myreq, err := f.makeReqFromValues(fcmData{To: token, Data: data2}, key)
+		myreq, err := f.makeReqFromValues(fcmData{Token: token, Data: data2}, config)
 		if err != nil {
 			return nil, err
 		}
@@ -146,10 +205,10 @@ func (f *FCM) Defaults() (failed bool) {
 	if !f.Enabled {
 		return
 	}
-	if len(f.Key) == 0 && len(f.Keys) == 0 {
-		log.Println("FCM Key cannot be empty")
+	if len(f.CredentialsPath) == 0 && len(f.CredentialsPaths) == 0 {
+		log.Println("FCM credentials path cannot be empty")
 		failed = true
 	}
-	f.APIURL = "https://fcm.googleapis.com/fcm/send"
+	f.ConfigFactory = googleConfigFactory
 	return
 }
