@@ -9,10 +9,10 @@ verbose = true
 [rewrite]
 	[rewrite.fcm]
 		enabled = false
-		# key = "" # key for any hostname
-		[rewrite.fcm.Keys] # keys for specific hostnames
-			#"your.fcm.hostname.example.org" = "YOUR_FCM_KEY"
-			#"other.fcm.hostname.example.org" = "OTHER_FCM_KEY"
+		# credentialsPath = "" # credentials json path for any hostname
+		[rewrite.fcm.CredentialsPaths] # keys for specific hostnames
+			#"your.fcm.hostname.example.org" = "/path/to/your-service-account-file.json"
+			#"other.fcm.hostname.example.org" = "/path/to/other-service-account-file.json"
 	[rewrite.gotify]
 		enabled = false
 		#address = "gotify1.unifiedpush.org:443"
