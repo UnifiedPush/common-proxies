@@ -177,23 +177,6 @@ func (s *RewriteTests) TestFCMCredentialsPaths() {
 	}
 }
 
-func (s *RewriteTests) TestGotify() {
-	testurl, _ := url.Parse(s.ts.URL)
-	gotify := rewrite.Gotify{Address: testurl.Host, Scheme: testurl.Scheme}
-
-	request := httptest.NewRequest("POST", "/?token=a", bytes.NewBufferString("content"))
-	handle(&gotify)(s.Resp, request)
-
-	//resp
-	s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
-
-	s.Require().NotNil(s.Call, "No request made")
-	//call
-	s.Equal("application/json", s.Call.Header.Get("Content-Type"), "header not set")
-
-	s.Equal(`{"message":"content"}`+"\n", string(s.CallBody), "request body incorrect")
-}
-
 func (s *RewriteTests) TestMatrixSend() {
 	matrix := gateway.Matrix{}
 

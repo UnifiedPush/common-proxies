@@ -2,7 +2,6 @@
 
 #from environment variables
 #FCM_DEVICE_TOKEN=""
-#GOTIFY_DEVICE_TOKEN=""
 
 TEST_PROXY_ADDR="https://gotify.karmanyaah.malhotra.cc"
 
@@ -10,5 +9,4 @@ PAYLOAD=$(printf "a\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\
 
 curl -d "$PAYLOAD" "$TEST_PROXY_ADDR/FCM?token=$FCM_DEVICE_TOKEN"
 printf "\n\n"
-curl -vd "$PAYLOAD" "$TEST_PROXY_ADDR/UP?token=$GOTIFY_DEVICE_TOKEN"
 echo 

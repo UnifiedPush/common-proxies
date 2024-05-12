@@ -34,7 +34,6 @@ func main() {
 	log.Println("Starting", Config.GetUserAgent())
 
 	handlers = []Handler{
-		&Config.Rewrite.Gotify,
 		&Config.Rewrite.FCM,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,

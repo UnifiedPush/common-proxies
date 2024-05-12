@@ -1,6 +1,6 @@
 # Docker-Compose Quick start
 
-If you know how to use docker-compose, the following is the quickest way to set up the whole common-proxies, gotify, caddy/traefik stack.
+If you know how to use docker-compose, the following is the quickest way to set up the whole common-proxies, caddy/traefik stack.
 
 1. Download the desired docker-compose.yml in a new directory.
    - for [caddy](./docker-compose-caddy.yml) - simple to use if common-proxies is all you're running

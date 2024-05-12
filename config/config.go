@@ -36,7 +36,6 @@ type Configuration struct {
 
 	Rewrite struct {
 		FCM    rewrite.FCM
-		Gotify rewrite.Gotify
 	}
 }
 
@@ -82,8 +81,7 @@ func ParseConf(location string) error {
 
 func Defaults(c *Configuration) (failed bool) {
 	c.MaxUPSize = 4096 // this forces it to be this, ignoring user config
-	return c.Rewrite.Gotify.Defaults() ||
-		c.Rewrite.FCM.Defaults() ||
+	return c.Rewrite.FCM.Defaults() ||
 		c.Gateway.Matrix.Defaults() ||
 		c.Gateway.Generic.Defaults()
 }
