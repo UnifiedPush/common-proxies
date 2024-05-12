@@ -13,9 +13,6 @@ verbose = true
 		[rewrite.fcm.CredentialsPaths] # keys for specific hostnames
 			#"your.fcm.hostname.example.org" = "/path/to/your-service-account-file.json"
 			#"other.fcm.hostname.example.org" = "/path/to/other-service-account-file.json"
-	[rewrite.gotify]
-		enabled = false
-		#address = "gotify1.unifiedpush.org:443"
-		#scheme = "https"
+
 
 # see https://github.com/UnifiedPush/common-proxies/blob/main/docs/config.md for more info

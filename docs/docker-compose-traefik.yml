@@ -32,9 +32,6 @@ services:
   proxy:
     image: unifiedpush/common-proxies
     environment:
-      - UP_REWRITE_GOTIFY_ENABLE=true
-      - UP_REWRITE_GOTIFY_ADDRESS=gotify:80
-      - UP_REWRITE_GOTIFY_SCHEME=http
       - UP_GATEWAY_MATRIX_ENABLE=true
     restart: always
     labels:
@@ -42,26 +39,9 @@ services:
       - "traefik.http.routers.commonproxies-tls.entrypoints=websecure"
       - "traefik.http.routers.commonproxies-tls.tls=true"
       - "traefik.http.routers.commonproxies-tls.tls.certresolver=myresolver"
-      - "traefik.http.routers.commonproxies-tls.rule=Host(`${LISTEN_DOMAIN:?}`) && PathPrefix(`/UP`, `/FCM`, `/_matrix`)"
+      - "traefik.http.routers.commonproxies-tls.rule=Host(`${LISTEN_DOMAIN:?}`) && PathPrefix(`/generic`, `/FCM`, `/_matrix`)"
       - "traefik.http.routers.commonproxies-tls.service=commonproxies-tls-service"
       - "traefik.http.services.commonproxies-tls-service.loadbalancer.server.port=5000"
-
-  gotify:
-    image: gotify/server
-    environment:
-      - GOTIFY_DEFAULTUSER_PASS=my-very-good-password
-      - GOTIFY_REGISTRATION=false
-    volumes:
-      - "./data/gotify:/app/data"
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.gotify-tls.entrypoints=websecure"
-      - "traefik.http.routers.gotify-tls.tls=true"
-      - "traefik.http.routers.gotify-tls.tls.certresolver=myresolver"
-      - "traefik.http.routers.gotify-tls.rule=Host(`${LISTEN_DOMAIN:?}`)"
-      - "traefik.http.routers.gotify-tls.service=gotify-tls-service"
-      - "traefik.http.services.gotify-tls-service.loadbalancer.server.port=80"
 
 volumes:
   acme:

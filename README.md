@@ -4,7 +4,6 @@ Common-Proxies is a set of rewrite proxies and push gateways for UnifiedPush. Se
 ![UnifiedPush service connection diagram](https://unifiedpush.org/img/diagram.png)
 
 Common-Proxies is most commonly used to do the following:
-  1. Adding UnifiedPush compatibility to a [Gotify](//gotify.net) server.
   1. Self-Hosting the [Matrix](//matrix.org) to UnifiedPush push gateway.
   1. App Developers only: Running embedded FCM distributor.
 
@@ -19,15 +18,11 @@ For more details about how this works, read on -
 
 ## Rewrite Proxy
 
-Common-Proxies handles paths like /UP (Gotify) or /FCM (Firebase). Only traffic for these paths should be forwarded to common-proxies, where it can then convert the push message to the push-provider specific format.
+Common-Proxies handles paths like /FCM (Firebase). Only traffic for these paths should be forwarded to common-proxies, where it can then convert the push message to the push-provider specific format.
 
 ### FCM
 
 This is meant to be hosted by the app developers or someone who has access to the Firebase settings for that project. The FCM key under `rewrite.fcm` in the config file is this secret key.
-
-### Gotify
-
-An installed reverse-proxy needs to forward the `/UP` path from the Gotify domain to common-proxies. Common-Proxies then modifies the request and sends it back to the server.
 
 ## Gateway
 
@@ -37,6 +32,10 @@ A Gateway is meant to take push messages from an existing service (like Matrix) 
 
 Gateways Matrix push notifications.  
 `["notification"]["devices"][0]["pushkey"]` is the UP endpoint this gateways to.
+
+### Generic
+
+Appends WebPush AESGCM headers to the message body and passes on the message.
 
 ## Note
 
