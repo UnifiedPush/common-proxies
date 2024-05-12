@@ -5,7 +5,7 @@ verbose = true
 [gateway]
 	# AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",	"myinternaldomain.local"] 
 	[gateway.matrix]
-		enabled = true
+		enabled = false
 [rewrite]
 	[rewrite.fcm]
 		enabled = false
