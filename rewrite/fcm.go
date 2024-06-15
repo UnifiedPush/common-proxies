@@ -161,43 +161,37 @@ func (f FCM) Req(body []byte, req http.Request) (requests []*http.Request, error
 }
 
 type fcmResp struct {
-	Results []struct {
-		Error string
-	}
+	Name string
+}
+
+type fcmErr struct {
+	Message string
 }
 
 func (f FCM) RespCode(resp *http.Response) *utils.ProxyError {
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 5000))
 	switch resp.StatusCode / 100 {
 	case 4: // 4xx
-		return utils.NewProxyErrS(500, "Error with common-proxies auth or json, not app server, this should not be happening")
+		out := fcmErr{}
+		err := json.Unmarshal(b, &out)
+		if err != nil {
+			// Not even to extract err from body
+			return utils.NewProxyErrS(500, "Error with common-proxies auth or json, not app server, this should not be happening")
+		}
+		return utils.NewProxyErrS(resp.StatusCode, "FCM error: "+out.Message)
 	case 5: // 5xx
 		//TODO implement forced exponential backoff in common-proxies
 		return utils.NewProxyErrS(429, "slow down")
 	}
 
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 5000))
-
 	out := fcmResp{}
 	err := json.Unmarshal(b, &out)
-	if err != nil || len(out.Results) < 1 {
+	if err != nil {
 		//
-		return utils.NewProxyErrS(502, "dunno whats going on, resp is not json or len reults is zero %s", string(b))
+		return utils.NewProxyErrS(502, "dunno whats going on, resp is not json or not in right schema %s", string(b))
 	}
 
-	givenErr := out.Results[0].Error
-
-	switch givenErr {
-	case "MissingRegistration", "InvalidRegistration", "NotRegistered", "MismatchSenderId":
-		return utils.NewProxyErrS(404, "Invalid Registration "+givenErr)
-		//case "InvalidParameters": // doesn't happen because 4xx is handled above
-	case "MessageTooBig", "InvalidDataKey", "InvalidTtl", "TopicsMessageRateExceeded", "InvalidApnsCredential": // this shouldn't happen, common-proxies has its own checks for size, common-proxies controls the keys, common-proxies doesn't send TTL, common-proxies doesn't deal in topics, idk apns
-		return utils.NewProxyErrS(502, "Something is very wrong "+givenErr)
-	case "Unavailable", "InternalServerError", "DeviceMessageRateExceeded":
-		//delay, TODO implement forced exponential backoff
-		return utils.NewProxyErrS(429, "slow down")
-	default:
-		return utils.NewProxyErrS(201, "")
-	}
+	return utils.NewProxyErrS(201, "")
 	//TODO log
 }
 
