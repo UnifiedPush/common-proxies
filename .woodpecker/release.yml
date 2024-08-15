@@ -1,3 +1,7 @@
+when:
+    - event: tag
+      branch: main
+
 steps:
     check:
         # Same in Dockerfile
