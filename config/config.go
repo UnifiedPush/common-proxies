@@ -11,8 +11,8 @@ import (
 	"sync"
 
 	"github.com/caarlos0/env/v6"
-	"github.com/karmanyaahm/up_rewrite/gateway"
-	"github.com/karmanyaahm/up_rewrite/rewrite"
+	"codeberg.org/UnifiedPush/common-proxies/gateway"
+	"codeberg.org/UnifiedPush/common-proxies/rewrite"
 	"github.com/komkom/toml"
 )
 

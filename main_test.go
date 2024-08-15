@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/karmanyaahm/up_rewrite/config"
-	"github.com/karmanyaahm/up_rewrite/gateway"
-	"github.com/karmanyaahm/up_rewrite/rewrite"
+	"codeberg.org/UnifiedPush/common-proxies/config"
+	"codeberg.org/UnifiedPush/common-proxies/gateway"
+	"codeberg.org/UnifiedPush/common-proxies/rewrite"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/oauth2"
 )

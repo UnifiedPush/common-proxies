@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/karmanyaahm/up_rewrite/utils"
+	"codeberg.org/UnifiedPush/common-proxies/utils"
 )
 
 type HttpHandler func(http.ResponseWriter, *http.Request)

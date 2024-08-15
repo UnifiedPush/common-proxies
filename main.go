@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/karmanyaahm/up_rewrite/config"
-	. "github.com/karmanyaahm/up_rewrite/config"
+	"codeberg.org/UnifiedPush/common-proxies/config"
+	. "codeberg.org/UnifiedPush/common-proxies/config"
 )
 
 var configFile = flag.String("c", "config.toml", "path to toml file for config")

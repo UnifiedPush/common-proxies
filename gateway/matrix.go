@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/karmanyaahm/up_rewrite/utils"
+	"codeberg.org/UnifiedPush/common-proxies/utils"
 )
 
 type Matrix struct {

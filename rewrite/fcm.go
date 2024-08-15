@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/karmanyaahm/up_rewrite/utils"
+	"codeberg.org/UnifiedPush/common-proxies/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )

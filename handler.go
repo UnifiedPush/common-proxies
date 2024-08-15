@@ -11,9 +11,9 @@ import (
 
 	phttp "github.com/hakobe/paranoidhttp"
 
-	"github.com/karmanyaahm/up_rewrite/config"
-	. "github.com/karmanyaahm/up_rewrite/config"
-	"github.com/karmanyaahm/up_rewrite/utils"
+	"codeberg.org/UnifiedPush/common-proxies/config"
+	. "codeberg.org/UnifiedPush/common-proxies/config"
+	"codeberg.org/UnifiedPush/common-proxies/utils"
 )
 
 var normalClient *http.Client

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/karmanyaahm/up_rewrite/utils"
+	"codeberg.org/UnifiedPush/common-proxies/utils"
 )
 
 // A Gateway that hanldles any URL in /generic/ENDPOINT_ENCODED/*
