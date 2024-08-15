@@ -3,7 +3,7 @@ when:
       branch: main
 
 steps:
-    check:
+    build:
         # Same in Dockerfile
         image: golang:1.17-buster
         when:
