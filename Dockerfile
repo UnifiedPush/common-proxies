@@ -1,3 +1,4 @@
+# Update CI if upgraded
 FROM golang:1.17-buster as build
 WORKDIR /src
 COPY go.mod go.sum ./

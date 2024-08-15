@@ -1,0 +1,58 @@
+steps:
+    check:
+        # Same in Dockerfile
+        image: golang:1.17-buster
+        when:
+          branch: main
+          event: [tag]
+        commands:
+          - make all
+          - echo "DOCKER_TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags),unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)" >> envvars
+
+    upload:
+        image: codeberg.org/s1m/woodpecker-upload:latest
+        when:
+            branch: main
+            event: [tag]
+        settings:
+            token:
+                from_secret: codeberg_token
+            file:
+              - bin/sha256
+              - bin/up-rewrite-darwin-amd64
+              - bin/up-rewrite-dragonfly-amd64
+              - bin/up-rewrite-freebsd-386
+              - bin/up-rewrite-freebsd-amd64
+              - bin/up-rewrite-freebsd-arm5
+              - bin/up-rewrite-freebsd-arm6
+              - bin/up-rewrite-freebsd-arm64
+              - bin/up-rewrite-freebsd-arm7
+              - bin/up-rewrite-linux-386
+              - bin/up-rewrite-linux-amd64
+              - bin/up-rewrite-linux-arm5
+              - bin/up-rewrite-linux-arm6
+              - bin/up-rewrite-linux-arm64
+              - bin/up-rewrite-linux-arm7
+              - bin/up-rewrite-netbsd-386
+              - bin/up-rewrite-netbsd-amd64
+              - bin/up-rewrite-netbsd-arm5
+              - bin/up-rewrite-netbsd-arm6
+              - bin/up-rewrite-netbsd-arm64
+              - bin/up-rewrite-netbsd-arm7
+              - bin/up-rewrite-openbsd-386
+              - bin/up-rewrite-openbsd-amd64
+              - bin/up-rewrite-openbsd-arm64
+              - bin/up-rewrite-solaris-amd64
+            package: true
+
+    publishContainer:
+        when:
+            branch: main
+            event: [tag]
+        image: woodpeckerci/plugin-docker-buildx
+        settings:
+            platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+            repo: codeberg.org/${CI_REPO}
+            registry: docker.io
+            tags: $DOCKER_TAG
+            secrets: [ username, password ]
