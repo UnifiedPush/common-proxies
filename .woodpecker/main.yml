@@ -1,18 +1,16 @@
+when:
+  branch: main
+  event: [push, pull_request, manual]
+
 steps:
     check:
         # Same in Dockerfile
         image: golang:1.17-buster
-        when:
-          branch: main
-          event: [push, pull_request, manual]
         commands:
           - make test
 
     upload:
         image: codeberg.org/s1m/woodpecker-upload:latest
-        when:
-            branch: main
-            event: [push, pull_request, manual]
         settings:
             token:
                 from_secret: codeberg_token
