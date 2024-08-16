@@ -59,7 +59,7 @@ func ParseConf(location string) error {
 	config := Configuration{}
 	b, err := ioutil.ReadFile(location)
 	if err != nil {
-		return errors.New(fmt.Sprint("Unable to find", location, "exiting..."))
+		return errors.New(fmt.Sprint("Unable to find ", location, " exiting..."))
 	}
 	b, err = ioutil.ReadAll(toml.New(bytes.NewReader(b)))
 	err = json.Unmarshal(b, &config)
