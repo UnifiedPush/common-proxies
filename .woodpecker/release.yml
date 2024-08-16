@@ -59,4 +59,7 @@ steps:
             repo: codeberg.org/${CI_REPO}
             registry: docker.io
             tags: $DOCKER_TAG
-            secrets: [ username, password ]
+            username:
+                from_secret: username
+            password:
+                from_secret: password
