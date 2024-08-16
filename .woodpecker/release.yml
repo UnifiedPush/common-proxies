@@ -11,7 +11,9 @@ steps:
           event: [tag]
         commands:
           - make all
-          - echo "DOCKER_TAG=unifiedpush/common-proxies:latest,unifiedpush/common-proxies:$(git describe --tags),unifiedpush/common-proxies:$(git describe --tags | cut -d '.' -f -2)" >> envvars
+          - echo "latest" >> .tags
+          - git describe --tags >> .tags
+          - git describe --tags | cut -d '.' -f -2 >> .tags
 
     upload:
         image: codeberg.org/s1m/woodpecker-upload:latest
@@ -58,7 +60,8 @@ steps:
             platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
             repo: codeberg.org/${CI_REPO}
             registry: docker.io
-            tags: $DOCKER_TAG
+            tags_file:
+                - .tags
             username:
                 from_secret: username
             password:
