@@ -52,7 +52,6 @@ func gatewayHandler(h Gateway) HttpHandler {
 			reqs     []*http.Request
 		)
 
-	topHandler:
 		switch r.Method {
 		case http.MethodGet:
 			w.Write(h.Get())
@@ -72,6 +71,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 			resps := make([]*http.Response, len(reqs))
 			for i, req := range reqs {
 				nwritten += req.ContentLength
+				url := req.URL.String()
 
 				req.Header.Add("User-Agent", Config.GetUserAgent())
 
@@ -79,16 +79,46 @@ func gatewayHandler(h Gateway) HttpHandler {
 				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
 					thisClient = normalClient
 				}
-				if !CheckIfRewriteProxy(req.URL.String(), thisClient) {
-					errHandle(utils.NewProxyErrS(403, "Target is not a UP Server"), w)
-					respType = "err, not UP endpoint"
-					break topHandler
-				}
-				resps[i], err = thisClient.Do(req)
-
-				if err != nil {
-					resps[i] = nil
-					log.Println(err)
+				cacheStatus := getEndpointStatus(url)
+				if cacheStatus == Refused {
+					log.Println("URL is cached as refused")
+					resps[i] = &http.Response{
+						StatusCode: 404,
+						Request:    req,
+					}
+				} else if cacheStatus == TemporaryUnavailable {
+					log.Println("URL is cached as temp unavailable")
+					resps[i] = &http.Response{
+						StatusCode: 429,
+						Request:    req,
+					}
+				} else {
+					resps[i], err = thisClient.Do(req)
+					if err != nil {
+						resps[i] = nil
+						log.Println("Could send the request: ", err)
+						// TODO catch error
+						// unsupported protocol scheme => Rejected
+						// lookup xxx: no such host => Rejected
+						// bad ip is detected => Rejected
+						// context deadline exceeded => Temp Unavailable
+						//
+						// This will probably be per-host caching
+					} else {
+						sc := resps[i].StatusCode
+						switch {
+						case sc == 429:
+							log.Println("Caching url as temp unavailable")
+							setEndpointStatus(url, TemporaryUnavailable)
+						case sc == 413:
+							log.Println("Request was too long")
+						case sc == 201:
+							// DO nothing
+						default:
+							log.Println("Unexpected status code: ", sc, ", caching as refused")
+							setEndpointStatus(url, Refused)
+						}
+					}
 				}
 			}
 
