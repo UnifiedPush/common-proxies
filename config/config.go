@@ -10,9 +10,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/caarlos0/env/v6"
 	"codeberg.org/UnifiedPush/common-proxies/gateway"
 	"codeberg.org/UnifiedPush/common-proxies/rewrite"
+	"github.com/caarlos0/env/v6"
 	"github.com/komkom/toml"
 )
 
@@ -35,7 +35,7 @@ type Configuration struct {
 	}
 
 	Rewrite struct {
-		FCM    rewrite.FCM
+		FCM rewrite.FCM
 	}
 }
 
@@ -59,7 +59,7 @@ func ParseConf(location string) error {
 	config := Configuration{}
 	b, err := ioutil.ReadFile(location)
 	if err != nil {
-		return errors.New(fmt.Sprint("Unable to find", location, "exiting..."))
+		return errors.New(fmt.Sprint("Unable to find ", location, ", exiting..."))
 	}
 	b, err = ioutil.ReadAll(toml.New(bytes.NewReader(b)))
 	err = json.Unmarshal(b, &config)
