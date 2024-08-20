@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -37,16 +38,25 @@ type RewriteTests struct {
 }
 
 func (s *RewriteTests) SetupTest() {
+	// Setup allowed Web Push endpoint
+	s.SetupTestServer(201, true)
+}
+
+func (s *RewriteTests) SetupTestServer(statusCode int, allowed bool) {
 	s.ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.Call = r
 		s.CallBody, _ = ioutil.ReadAll(r.Body)
-		w.WriteHeader(200)
+		w.WriteHeader(statusCode)
 		w.Write(s.resp)
 	}))
 
 	u, _ := url.Parse(s.ts.URL)
-	config.Config.Gateway.AllowedHosts = []string{u.Host}
-	ForceBypassValidProviderCheck(s.ts.URL, "http://temp.test")
+	if allowed {
+		log.Println("TestServer, allowed: ", u)
+		config.Config.Gateway.AllowedHosts = []string{u.Host}
+	} else {
+		log.Println("TestServer, not allowed: ", u)
+	}
 
 	s.resetTest()
 }
@@ -177,23 +187,68 @@ func (s *RewriteTests) TestFCMCredentialsPaths() {
 	}
 }
 
-func (s *RewriteTests) TestMatrixSend() {
+func (s *RewriteTests) TestMatrixAllowed() {
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"},{"pushkey":"http://temp.test"}], "counts":{"unread":1}}}`
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
-	s.Equal(string(body), `{"rejected":[]}`)
+	s.Equal(`{"rejected":[]}`, string(body))
 
 	s.Require().NotNil(s.Call, "No request made")
 
 	//call
 	s.Equal(`{"notification":{"counts":{"unread":1}}}`, string(s.CallBody), "request body incorrect")
 
+}
+
+func (s *RewriteTests) TestMatrixRejectedFromCache() {
+	setEndpointStatus(s.ts.URL, Refused)
+	matrix := gateway.Matrix{}
+
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
+}
+
+func (s *RewriteTests) TestMatrixRejected404() {
+	// Setup allowed web push endpoint unsubscribed
+	s.SetupTestServer(404, true)
+	matrix := gateway.Matrix{}
+
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
+}
+
+func (s *RewriteTests) TestMatrixRejectedBadIP() {
+	// Setup forbiden web push endpoint
+	s.SetupTestServer(201, false)
+	matrix := gateway.Matrix{}
+
+	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	// Check on errors not implemented yet
+	// body, _ := ioutil.ReadAll(s.Resp.Body)
+	// s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixResp() {
@@ -212,7 +267,7 @@ my msg`
 	request.Header.Add("EncRYPTION", `Encryption: salt="lngarbyKfMoi9Z75xYXmkg"`)
 	handle(&gw)(s.Resp, request)
 
-	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
 	s.Equal(`this is   
 	
 my msg
@@ -225,7 +280,7 @@ aesgcm`, string(s.CallBody), "body should match")
 func (s *RewriteTests) TestHealth() {
 	resp, err := http.Get(s.ts.URL + "/health")
 	s.Require().Nil(err)
-	s.Equal(200, resp.StatusCode)
+	s.Equal(201, resp.StatusCode)
 	read, err := io.ReadAll(resp.Body)
 	s.Require().Nil(err)
 	s.Contains(`OK`, string(read))
