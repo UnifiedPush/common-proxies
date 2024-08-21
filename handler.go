@@ -115,6 +115,10 @@ func gatewayHandler(h Gateway) HttpHandler {
 							}
 							setHostStatus(url, TemporaryUnavailable)
 						default:
+							// This can be:
+							// - unsupported protocol
+							// - bad ip
+							// - invalid tls certif
 							log.Println("Url is considered as refused")
 							resps[i] = &http.Response{
 								StatusCode: 404,
