@@ -96,7 +96,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 				} else {
 					resps[i], err = thisClient.Do(req)
 					if err != nil {
-						log.Println("Could send the request: ", err)
+						log.Println("Could not send the request: ", err)
 						var netErr net.Error
 						var dnsErr *net.DNSError
 						switch {
