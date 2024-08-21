@@ -240,6 +240,8 @@ func (s *RewriteTests) TestMatrixRejected404() {
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+	u, _ := neturl.Parse(url)
+	s.Equal(Refused, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixRejectedBadIP() {
@@ -256,6 +258,8 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+	u, _ := neturl.Parse(url)
+	s.Equal(Refused, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
@@ -270,6 +274,8 @@ func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+	u, _ := neturl.Parse(url)
+	s.Equal(Refused, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
