@@ -136,8 +136,12 @@ func gatewayHandler(h Gateway) HttpHandler {
 							log.Println("Request was too long")
 						case sc == 201:
 							// DO nothing
+						case sc > 499:
+							log.Println("A server error occured: ", sc, " caching as temp unavailable")
+							setEndpointStatus(url, TemporaryUnavailable)
 						default:
 							log.Println("Unexpected status code: ", sc, ", caching as refused")
+							resps[i].StatusCode = 404
 							setEndpointStatus(url, Refused)
 						}
 					}
