@@ -101,12 +101,21 @@ func gatewayHandler(h Gateway) HttpHandler {
 						var dnsErr *net.DNSError
 						switch {
 						case errors.As(err, &dnsErr):
-							log.Println("DNSError: ", dnsErr)
-							resps[i] = &http.Response{
-								StatusCode: 429,
-								Request:    req,
+							log.Println("Consider as refused: DNSError: ", dnsErr)
+							if dnsErr.IsNotFound {
+								log.Println("Url is considered as refused")
+								resps[i] = &http.Response{
+									StatusCode: 404,
+									Request:    req,
+								}
+								setHostStatus(url, Refused)
+							} else {
+								resps[i] = &http.Response{
+									StatusCode: 429,
+									Request:    req,
+								}
+								setHostStatus(url, TemporaryUnavailable)
 							}
-							setHostStatus(url, TemporaryUnavailable)
 						case errors.As(err, &netErr) && netErr.Timeout():
 							log.Println("Timeout error")
 							resps[i] = &http.Response{

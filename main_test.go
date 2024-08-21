@@ -284,9 +284,9 @@ func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	// Nothing in the spec allows to handle temp unavailable
-	s.Equal(`{"rejected":[]}`, string(body))
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 	u, _ := neturl.Parse(url)
-	s.Equal(TemporaryUnavailable, getEndpointStatus(u))
+	s.Equal(Refused, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixRejectedTimeout() {
