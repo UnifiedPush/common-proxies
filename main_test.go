@@ -300,7 +300,9 @@ func (s *RewriteTests) TestMatrixRejectedTimeout() {
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
-	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+	// Nothing in the spec allows to handle temp unavailable
+	s.Equal(`{"rejected":[]}`, string(body))
+	s.Equal(TemporaryUnavailable, getEndpointStatus(url))
 }
 
 func (s *RewriteTests) TestMatrixResp() {
