@@ -190,7 +190,8 @@ func (s *RewriteTests) TestFCMCredentialsPaths() {
 func (s *RewriteTests) TestMatrixAllowed() {
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	url := s.ts.URL
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
@@ -210,14 +211,15 @@ func (s *RewriteTests) TestMatrixRejectedFromCache() {
 	setEndpointStatus(s.ts.URL, Refused)
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	url := s.ts.URL
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
-	s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixRejected404() {
@@ -225,14 +227,15 @@ func (s *RewriteTests) TestMatrixRejected404() {
 	s.SetupTestServer(404, true)
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	url := s.ts.URL
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	body, _ := ioutil.ReadAll(s.Resp.Body)
-	s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixRejectedBadIP() {
@@ -240,7 +243,8 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 	s.SetupTestServer(201, false)
 	matrix := gateway.Matrix{}
 
-	content := `{"notification":{"devices":[{"pushkey":"` + s.ts.URL + `"}], "counts":{"unread":1}}}`
+	url := s.ts.URL
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)
 
@@ -248,7 +252,7 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
 	// Check on errors not implemented yet
 	// body, _ := ioutil.ReadAll(s.Resp.Body)
-	// s.Equal(`{"rejected":["`+s.ts.URL+`"]}`, string(body))
+	// s.Equal(`{"rejected":["` + url + `"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixResp() {
