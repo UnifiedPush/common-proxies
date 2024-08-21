@@ -15,4 +15,4 @@ verbose = true
 			#"other.fcm.hostname.example.org" = "/path/to/other-service-account-file.json"
 
 
-# see https://github.com/UnifiedPush/common-proxies/blob/main/docs/config.md for more info
+# see https://codeberg.org/UnifiedPush/common-proxies/src/branch/main/docs/config.md for more info
