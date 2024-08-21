@@ -72,7 +72,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 			resps := make([]*http.Response, len(reqs))
 			for i, req := range reqs {
 				nwritten += req.ContentLength
-				url := req.URL.String()
+				url := req.URL
 
 				req.Header.Add("User-Agent", Config.GetUserAgent())
 
@@ -106,21 +106,21 @@ func gatewayHandler(h Gateway) HttpHandler {
 								StatusCode: 429,
 								Request:    req,
 							}
-							setEndpointStatus(url, TemporaryUnavailable)
+							setHostStatus(url, TemporaryUnavailable)
 						case errors.As(err, &netErr) && netErr.Timeout():
 							log.Println("Timeout error")
 							resps[i] = &http.Response{
 								StatusCode: 429,
 								Request:    req,
 							}
-							setEndpointStatus(url, TemporaryUnavailable)
+							setHostStatus(url, TemporaryUnavailable)
 						default:
 							log.Println("Url is considered as refused")
 							resps[i] = &http.Response{
 								StatusCode: 404,
 								Request:    req,
 							}
-							setEndpointStatus(url, Refused)
+							setHostStatus(url, Refused)
 						}
 					} else {
 						sc := resps[i].StatusCode

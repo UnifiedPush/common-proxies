@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	neturl "net/url"
 	"testing"
 	"time"
 
@@ -54,7 +54,7 @@ func (s *RewriteTests) SetupTestServer(statusCode int, allowed bool, timeout boo
 		w.Write(s.resp)
 	}))
 
-	u, _ := url.Parse(s.ts.URL)
+	u, _ := neturl.Parse(s.ts.URL)
 	if allowed {
 		log.Println("TestServer, allowed: ", u)
 		config.Config.Gateway.AllowedHosts = []string{u.Host}
@@ -211,7 +211,8 @@ func (s *RewriteTests) TestMatrixAllowed() {
 }
 
 func (s *RewriteTests) TestMatrixRejectedFromCache() {
-	setEndpointStatus(s.ts.URL, Refused)
+	u, _ := neturl.Parse(s.ts.URL)
+	setEndpointStatus(u, Refused)
 	matrix := gateway.Matrix{}
 
 	url := s.ts.URL
@@ -284,7 +285,8 @@ func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	// Nothing in the spec allows to handle temp unavailable
 	s.Equal(`{"rejected":[]}`, string(body))
-	s.Equal(TemporaryUnavailable, getEndpointStatus(url))
+	u, _ := neturl.Parse(url)
+	s.Equal(TemporaryUnavailable, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixRejectedTimeout() {
@@ -302,7 +304,8 @@ func (s *RewriteTests) TestMatrixRejectedTimeout() {
 	body, _ := ioutil.ReadAll(s.Resp.Body)
 	// Nothing in the spec allows to handle temp unavailable
 	s.Equal(`{"rejected":[]}`, string(body))
-	s.Equal(TemporaryUnavailable, getEndpointStatus(url))
+	u, _ := neturl.Parse(url)
+	s.Equal(TemporaryUnavailable, getEndpointStatus(u))
 }
 
 func (s *RewriteTests) TestMatrixResp() {

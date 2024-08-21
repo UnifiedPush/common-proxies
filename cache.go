@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -22,8 +23,18 @@ const (
 	Refused
 )
 
-func getEndpointStatus(url string) EndpointStatus {
-	status, found := endpointCache.Get(url)
+func getHost(url *url.URL) string {
+	return url.Scheme + "://" + url.Host
+}
+
+func getEndpointStatus(url *url.URL) EndpointStatus {
+	status, found := endpointCache.Get(getHost(url))
+	if found {
+		if s, ok := status.(EndpointStatus); ok {
+			return s
+		}
+	}
+	status, found = endpointCache.Get(url.String())
 	if found {
 		if s, ok := status.(EndpointStatus); ok {
 			return s
@@ -32,11 +43,19 @@ func getEndpointStatus(url string) EndpointStatus {
 	return NotCached
 }
 
-func setEndpointStatus(url string, status EndpointStatus) {
+func cacheStatus(id string, status EndpointStatus) {
 	dur := cache.DefaultExpiration
 	// Cache for 10 minutes if the endpoint is refused
 	if status == Refused {
 		dur = 10 * time.Minute
 	}
-	endpointCache.Set(url, status, dur)
+	endpointCache.Set(id, status, dur)
+}
+
+func setEndpointStatus(url *url.URL, status EndpointStatus) {
+	cacheStatus(url.String(), status)
+}
+
+func setHostStatus(url *url.URL, status EndpointStatus) {
+	cacheStatus(getHost(url), status)
 }
