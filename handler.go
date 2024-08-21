@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -95,15 +96,32 @@ func gatewayHandler(h Gateway) HttpHandler {
 				} else {
 					resps[i], err = thisClient.Do(req)
 					if err != nil {
-						resps[i] = nil
 						log.Println("Could send the request: ", err)
-						// TODO catch error
-						// unsupported protocol scheme => Rejected
-						// lookup xxx: no such host => Rejected
-						// bad ip is detected => Rejected
-						// context deadline exceeded => Temp Unavailable
-						//
-						// This will probably be per-host caching
+						var netErr net.Error
+						var dnsErr *net.DNSError
+						switch {
+						case errors.As(err, &dnsErr):
+							log.Println("DNSError: ", dnsErr)
+							resps[i] = &http.Response{
+								StatusCode: 429,
+								Request:    req,
+							}
+							setEndpointStatus(url, TemporaryUnavailable)
+						case errors.As(err, &netErr) && netErr.Timeout():
+							log.Println("Timeout error")
+							resps[i] = &http.Response{
+								StatusCode: 429,
+								Request:    req,
+							}
+							setEndpointStatus(url, TemporaryUnavailable)
+						default:
+							log.Println("Url is considered as refused")
+							resps[i] = &http.Response{
+								StatusCode: 404,
+								Request:    req,
+							}
+							setEndpointStatus(url, Refused)
+						}
 					} else {
 						sc := resps[i].StatusCode
 						switch {
