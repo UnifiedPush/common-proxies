@@ -281,7 +281,7 @@ func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
 func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
 	matrix := gateway.Matrix{}
 
-	url := "http://aaaa"
+	url := "http://doesnotexist.unifiedpush.org"
 	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
 	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
 	handle(&matrix)(s.Resp, request)

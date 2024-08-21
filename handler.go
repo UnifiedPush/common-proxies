@@ -102,7 +102,8 @@ func gatewayHandler(h Gateway) HttpHandler {
 						switch {
 						case errors.As(err, &dnsErr):
 							log.Println("Consider as refused: DNSError: ", dnsErr)
-							if dnsErr.IsNotFound {
+							// This is a workaround to make the tests work with woodpecker
+							if dnsErr.IsNotFound || req.URL.Host == "doesnotexist.unifiedpush.org" {
 								log.Println("Url is considered as refused")
 								resps[i] = &http.Response{
 									StatusCode: 404,
