@@ -208,7 +208,6 @@ func (s *RewriteTests) TestMatrixAllowed() {
 
 	//call
 	s.Equal(`{"notification":{"counts":{"unread":1}}}`, string(s.CallBody), "request body incorrect")
-
 }
 
 func (s *RewriteTests) TestMatrixRejectedFromCache() {
@@ -254,9 +253,8 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	// Check on errors not implemented yet
-	// body, _ := ioutil.ReadAll(s.Resp.Body)
-	// s.Equal(`{"rejected":["` + url + `"]}`, string(body))
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
