@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"codeberg.org/UnifiedPush/common-proxies/config"
 	"codeberg.org/UnifiedPush/common-proxies/gateway"
@@ -39,11 +40,14 @@ type RewriteTests struct {
 
 func (s *RewriteTests) SetupTest() {
 	// Setup allowed Web Push endpoint
-	s.SetupTestServer(201, true)
+	s.SetupTestServer(201, true, false)
 }
 
-func (s *RewriteTests) SetupTestServer(statusCode int, allowed bool) {
+func (s *RewriteTests) SetupTestServer(statusCode int, allowed bool, timeout bool) {
 	s.ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if timeout {
+			time.Sleep(10 * time.Second)
+		}
 		s.Call = r
 		s.CallBody, _ = ioutil.ReadAll(r.Body)
 		w.WriteHeader(statusCode)
@@ -224,7 +228,7 @@ func (s *RewriteTests) TestMatrixRejectedFromCache() {
 
 func (s *RewriteTests) TestMatrixRejected404() {
 	// Setup allowed web push endpoint unsubscribed
-	s.SetupTestServer(404, true)
+	s.SetupTestServer(404, true, false)
 	matrix := gateway.Matrix{}
 
 	url := s.ts.URL
@@ -240,7 +244,7 @@ func (s *RewriteTests) TestMatrixRejected404() {
 
 func (s *RewriteTests) TestMatrixRejectedBadIP() {
 	// Setup forbiden web push endpoint
-	s.SetupTestServer(201, false)
+	s.SetupTestServer(201, false, false)
 	matrix := gateway.Matrix{}
 
 	url := s.ts.URL
@@ -253,6 +257,50 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 	// Check on errors not implemented yet
 	// body, _ := ioutil.ReadAll(s.Resp.Body)
 	// s.Equal(`{"rejected":["` + url + `"]}`, string(body))
+}
+
+func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
+	matrix := gateway.Matrix{}
+
+	url := "unix://foo"
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+}
+
+func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
+	matrix := gateway.Matrix{}
+
+	url := "http://aaaa"
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
+}
+
+func (s *RewriteTests) TestMatrixRejectedTimeout() {
+	// Setup allowed Web Push endpoint who timeout
+	s.SetupTestServer(201, true, true)
+	matrix := gateway.Matrix{}
+
+	url := s.ts.URL
+	content := `{"notification":{"devices":[{"pushkey":"` + url + `"}], "counts":{"unread":1}}}`
+	request := httptest.NewRequest("POST", "/", bytes.NewBufferString(content))
+	handle(&matrix)(s.Resp, request)
+
+	//resp
+	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
+	body, _ := ioutil.ReadAll(s.Resp.Body)
+	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 }
 
 func (s *RewriteTests) TestMatrixResp() {
