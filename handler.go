@@ -144,7 +144,8 @@ func gatewayHandler(h Gateway) HttpHandler {
 							setEndpointStatus(url, TemporaryUnavailable)
 						case sc == 413:
 							log.Println("Request was too long")
-						case sc == 201:
+						// ntfy does not return 201
+						case sc == 201 || sc == 200:
 							// DO nothing
 						case sc > 499:
 							log.Println("A server error occured: ", sc, " caching as temp unavailable")
