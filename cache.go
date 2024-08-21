@@ -28,7 +28,7 @@ func getHost(url *url.URL) string {
 }
 
 func getEndpointStatus(url *url.URL) EndpointStatus {
-	status, found := endpointCache.Get(getHost(url))
+	status, found := endpointCache.Get("host:" + getHost(url))
 	if found {
 		if s, ok := status.(EndpointStatus); ok {
 			return s
@@ -57,5 +57,7 @@ func setEndpointStatus(url *url.URL, status EndpointStatus) {
 }
 
 func setHostStatus(url *url.URL, status EndpointStatus) {
-	cacheStatus(getHost(url), status)
+	// The suffix "host:" avoid considering a cached endpoint
+	// as a host endpoint
+	cacheStatus("host:"+getHost(url), status)
 }
