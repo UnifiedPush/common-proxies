@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -49,7 +48,7 @@ func (s *RewriteTests) SetupTestServer(statusCode int, allowed bool, timeout boo
 			time.Sleep(10 * time.Second)
 		}
 		s.Call = r
-		s.CallBody, _ = ioutil.ReadAll(r.Body)
+		s.CallBody, _ = io.ReadAll(r.Body)
 		w.WriteHeader(statusCode)
 		w.Write(s.resp)
 	}))
@@ -201,7 +200,7 @@ func (s *RewriteTests) TestMatrixAllowed() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":[]}`, string(body))
 
 	s.Require().NotNil(s.Call, "No request made")
@@ -222,7 +221,7 @@ func (s *RewriteTests) TestMatrixRejectedFromCache() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 }
 
@@ -238,7 +237,7 @@ func (s *RewriteTests) TestMatrixRejected404() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 	u, _ := neturl.Parse(url)
 	s.Equal(Refused, getEndpointStatus(u))
@@ -256,7 +255,7 @@ func (s *RewriteTests) TestMatrixRejectedBadIP() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 	u, _ := neturl.Parse(url)
 	s.Equal(Refused, getEndpointStatus(u))
@@ -272,7 +271,7 @@ func (s *RewriteTests) TestMatrixRejectedUnsupportedProtocol() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 	u, _ := neturl.Parse(url)
 	s.Equal(Refused, getEndpointStatus(u))
@@ -288,7 +287,7 @@ func (s *RewriteTests) TestMatrixRejectedLookupNoHost() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	// Nothing in the spec allows to handle temp unavailable
 	s.Equal(`{"rejected":["`+url+`"]}`, string(body))
 	u, _ := neturl.Parse(url)
@@ -307,7 +306,7 @@ func (s *RewriteTests) TestMatrixRejectedTimeout() {
 
 	//resp
 	s.Equal(200, s.Resp.Result().StatusCode, "request should be valid")
-	body, _ := ioutil.ReadAll(s.Resp.Body)
+	body, _ := io.ReadAll(s.Resp.Body)
 	// Nothing in the spec allows to handle temp unavailable
 	s.Equal(`{"rejected":[]}`, string(body))
 	u, _ := neturl.Parse(url)

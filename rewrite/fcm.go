@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"sync"
 
 	"codeberg.org/UnifiedPush/common-proxies/utils"
@@ -44,7 +44,7 @@ func googleConfigFactory(credentialsPath string) (config *FCMConfig, error error
 		return &existing, nil
 	}
 
-	jsonData, err := ioutil.ReadFile(credentialsPath)
+	jsonData, err := os.ReadFile(credentialsPath)
 	if err != nil {
 		return nil, utils.NewProxyError(500, errors.New("could not load credentials file"))
 	}

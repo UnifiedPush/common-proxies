@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -57,11 +57,11 @@ func ParseConf(location string) error {
 	defer ConfigLock.Unlock()
 
 	config := Configuration{}
-	b, err := ioutil.ReadFile(location)
+	b, err := os.ReadFile(location)
 	if err != nil {
 		return errors.New(fmt.Sprint("Unable to find ", location, ", exiting..."))
 	}
-	b, err = ioutil.ReadAll(toml.New(bytes.NewReader(b)))
+	b, err = io.ReadAll(toml.New(bytes.NewReader(b)))
 	err = json.Unmarshal(b, &config)
 	if err != nil {
 		return errors.New(fmt.Sprint("Error parsing config file exiting...", err))
