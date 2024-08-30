@@ -81,13 +81,13 @@ func gatewayHandler(h Gateway) HttpHandler {
 				}
 				cacheStatus := getEndpointStatus(url)
 				if cacheStatus == Refused {
-					log.Println("handler: req to ", req.Host, ", URL is cached as refused")
+					log.Println("handler: req to", req.Host, ", URL is cached as refused")
 					resps[i] = &http.Response{
 						StatusCode: 404,
 						Request:    req,
 					}
 				} else if cacheStatus == TemporaryUnavailable {
-					log.Println("handler: req to ", req.Host, ", URL is cached as temp unavailable")
+					log.Println("handler: req to", req.Host, ", URL is cached as temp unavailable")
 					resps[i] = &http.Response{
 						StatusCode: 429,
 						Request:    req,
@@ -101,14 +101,14 @@ func gatewayHandler(h Gateway) HttpHandler {
 						case errors.As(err, &dnsErr):
 							// This is a workaround to make the tests work with woodpecker
 							if dnsErr.IsNotFound || req.URL.Host == "doesnotexist.unifiedpush.org" {
-								log.Println("handler: req to ", req.Host, ", caching URL as refused (Domain not found)")
+								log.Println("handler: req to", req.Host, ", caching URL as refused (Domain not found)")
 								resps[i] = &http.Response{
 									StatusCode: 404,
 									Request:    req,
 								}
 								setHostStatus(url, Refused)
 							} else {
-								log.Println("handler: req to ", req.Host, ", caching URL as temp unavailable. DNSError: ", dnsErr)
+								log.Println("handler: req to", req.Host, ", caching URL as temp unavailable. DNSError:", dnsErr)
 								resps[i] = &http.Response{
 									StatusCode: 429,
 									Request:    req,
@@ -116,7 +116,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 								setHostStatus(url, TemporaryUnavailable)
 							}
 						case errors.As(err, &netErr) && netErr.Timeout():
-							log.Println("handler: req to ", req.Host, ", caching URL as temp unavailable (Timeout error)")
+							log.Println("handler: req to", req.Host, ", caching URL as temp unavailable (Timeout error)")
 							resps[i] = &http.Response{
 								StatusCode: 429,
 								Request:    req,
@@ -127,7 +127,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 							// - unsupported protocol
 							// - bad ip
 							// - invalid tls certif
-							log.Println("handler: req to ", req.Host, ", caching URL as refused. Err: ", err)
+							log.Println("handler: req to", req.Host, ", caching URL as refused. Err:", err)
 							resps[i] = &http.Response{
 								StatusCode: 404,
 								Request:    req,
@@ -138,18 +138,18 @@ func gatewayHandler(h Gateway) HttpHandler {
 						sc := resps[i].StatusCode
 						switch {
 						case sc == 429:
-							log.Println("handler: req to ", req.Host, ", caching URL as temp unavailable (Status=429)")
+							log.Println("handler: req to", req.Host, ", caching URL as temp unavailable (Status= 429)")
 							setEndpointStatus(url, TemporaryUnavailable)
 						case sc == 413:
-							log.Println("handler: req to ", req.Host, ", Request was too long (Status=413)")
+							log.Println("handler: req to", req.Host, ", Request was too long (Status= 413)")
 						// ntfy does not return 201
 						case sc == 201 || sc == 200:
 							// DO nothing
 						case sc > 499:
-							log.Println("handler: req to ", req.Host, ", caching URL as temp unavailable (Status=", sc, "429)")
+							log.Println("handler: req to", req.Host, ", caching URL as temp unavailable (Status=", sc, ")")
 							setEndpointStatus(url, TemporaryUnavailable)
 						default:
-							log.Println("handler: req to ", req.Host, ", caching URL as refused. Unexpected status code. (Status=", sc, "429)")
+							log.Println("handler: req to", req.Host, ", caching URL as refused. Unexpected status code. (Status=", sc, ")")
 							resps[i].StatusCode = 404
 							setEndpointStatus(url, Refused)
 						}
