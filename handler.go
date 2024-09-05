@@ -137,6 +137,9 @@ func gatewayHandler(h Gateway) HttpHandler {
 					} else {
 						sc := resps[i].StatusCode
 						switch {
+						case sc == 404:
+							log.Println("handler: req to", req.Host, ", caching URL as refused (Status= 404)")
+							setEndpointStatus(url, Refused)
 						case sc == 429:
 							log.Println("handler: req to", req.Host, ", caching URL as temp unavailable (Status= 429)")
 							setEndpointStatus(url, TemporaryUnavailable)
