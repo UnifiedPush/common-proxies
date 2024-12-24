@@ -243,6 +243,7 @@ func proxyHandler(h Proxy) HttpHandler {
 		}
 		w.WriteHeader(code)
 		w.Header().Add("TTL", "86400") // Cache for a day max
+		w.Header().Add("Content-encoding", "aes128gcm") // Fake encryption
 		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType, code)
 
 		return
