@@ -5,7 +5,7 @@ when:
 steps:
     check:
         # Same in Dockerfile
-        image: golang:1.17-buster
+        image: golang:1.23
         commands:
           - make test
 
