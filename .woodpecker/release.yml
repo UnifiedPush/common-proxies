@@ -5,7 +5,7 @@ when:
 steps:
     build:
         # Same in Dockerfile
-        image: golang:1.17-buster
+        image: golang:1.23
         when:
           branch: main
           event: [tag]
