@@ -74,6 +74,8 @@ func gatewayHandler(h Gateway) HttpHandler {
 				url := req.URL
 
 				req.Header.Add("User-Agent", Config.GetUserAgent())
+				req.Header.Add("TTL", "86400") // Cache for a day max
+				req.Header.Add("Content-encoding", "aes128gcm") // Fake encryption
 
 				thisClient := paranoidClient
 				if utils.InStringSlice(config.Config.Gateway.AllowedHosts, req.URL.Host) {
