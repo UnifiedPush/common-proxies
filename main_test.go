@@ -221,28 +221,6 @@ func (s *RewriteTests) TestMatrixResp() {
 	//TODO
 }
 
-func (s *RewriteTests) TestGenericGateway() {
-	gw := gateway.Generic{}
-
-	content := `this is   
-	
-my msg`
-	request := httptest.NewRequest("POST", "/generic/"+base64.RawURLEncoding.EncodeToString([]byte(s.ts.URL)), bytes.NewBufferString(content))
-	request.Header.Add("cOntent-Encoding", "aesgcm")
-	request.Header.Add("cryPTo-KEY", `dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"`)
-	request.Header.Add("EncRYPTION", `Encryption: salt="lngarbyKfMoi9Z75xYXmkg"`)
-	handle(&gw)(s.Resp, request)
-
-	s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
-	s.Equal(`this is   
-	
-my msg
-dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"
-Encryption: salt="lngarbyKfMoi9Z75xYXmkg"
-aesgcm`, string(s.CallBody), "body should match")
-
-}
-
 func (s *RewriteTests) TestHealth() {
 	resp, err := http.Get(s.ts.URL + "/health")
 	s.Require().Nil(err)

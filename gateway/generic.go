@@ -2,12 +2,9 @@ package gateway
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"strings"
-
-	"codeberg.org/UnifiedPush/common-proxies/utils"
+	"net/url"
 )
 
 // A Gateway that hanldles any URL in /generic/ENDPOINT_ENCODED/*
@@ -39,34 +36,17 @@ func (m Generic) Get() []byte {
 }
 
 func (m Generic) Req(body []byte, req http.Request) ([]*http.Request, error) {
-	myurl := req.URL.EscapedPath()
-	encodedEndpoint := ""
-	if encodedEndpoints := strings.SplitN(myurl, "/", 4); len(encodedEndpoints) >= 3 {
-		encodedEndpoint = encodedEndpoints[2]
+	endpoint := req.URL.Query().Get("e")
+	if _, err := url.Parse(endpoint); err != nil {
+		return nil, fmt.Errorf("Not valid endpoint: %w", err)
 	}
-	endpointBytes, err := base64.RawURLEncoding.DecodeString(encodedEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("Encoded endpoint not valid base64: %w", err)
-	}
-	endpoint := string(endpointBytes)
-
-	// append WebPush draft 4 (ECE Draft 3) style "aesgcm" headers to the body, so UnifiedPush apps can recieve them
-	if req.Header.Get("content-encoding") == "aesgcm" {
-		pubkey := req.Header.Get("crypto-key")
-		salt := req.Header.Get("encryption")
-
-		if len(pubkey) < 65 || len(salt) < 16 { // approx values
-			return nil, utils.NewProxyErrS(400, "Not real WebPush: Headers too short")
-		}
-		body = append(body, []byte("\n"+pubkey+"\n"+salt+"\naesgcm")...)
-	}
-	// check that it is either aesgcm, aes128gcm or nextcloud??
-	// How would I identify Nextcloud requests without parsing JSON?
-	// Basic checks are needed to protect against low-effort spammers
 	newReq, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
+	newReq.Header.Set("TTL", "86400") // Cache for a day max
+	newReq.Header.Set("Urgency", "normal")
+	newReq.Header.Set("Content-Encoding", "aes128gcm")
 	return []*http.Request{newReq}, nil
 }
 
