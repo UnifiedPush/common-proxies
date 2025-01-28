@@ -11,6 +11,7 @@ See [the example configuration file](../example-config.toml) for how a toml conf
 | Enable FCM Rewrite Proxy          | rewrite.webpushfcm.enable    | UP_REWRITE_WEBPUSH_FCM_ENABLE   | boolean              |                                                                                                                                                                                      |
 | VAPID private key for FCM         | rewrite.fcm.credentialsPath  | UP_REWRITE_WEBPUSH_FCM_CREDENTIALS_PATH | string       | WebPush requests to FCM needs a VAPID authorization. The private key used to generate the authorization is loaded from this path. To generate a new one, run `common-proxies -vapid` |
 | Allowed Gateway Hosts             | gateway.AllowedHosts         | UP_GATEWAY_ALLOWEDHOSTS         | string list          | See relevant section below                                                                                                                                                           |
+| Enable AESGCM Gateway             | gateway.aesgcm.enable        | UP_GATEWAY_AESGCM_ENABLE        | boolean              | Enable the AESGCM gateway on /aesgcm to convert old webpush requests to UnifiedPush compatible ones   |
 
 __Deprecated configurations__
 

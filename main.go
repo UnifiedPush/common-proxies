@@ -56,6 +56,7 @@ func main() {
 		&Config.Rewrite.WebPushFCM,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,
+		&Config.Gateway.Aesgcm,
 	}
 
 	myRouter := http.NewServeMux()

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	neturl "net/url"
 	"testing"
 	"time"
@@ -219,6 +220,31 @@ func (s *RewriteTests) TestMatrixRejectedTimeout() {
 
 func (s *RewriteTests) TestMatrixResp() {
 	//TODO
+}
+
+func (s *RewriteTests) TestAesgcmGateway() {
+	gw := gateway.Aesgcm{}
+
+	content := `this is
+
+my msg`
+	url, _ := url.Parse("http://localhost/aesgcm")
+	query := url.Query()
+	query.Add("e", s.ts.URL)
+	log.Println("Req: " + url.Path + "?" + query.Encode())
+	request := httptest.NewRequest("POST", url.Path+"?"+query.Encode(), bytes.NewBufferString(content))
+	request.Header.Add("cOntent-Encoding", "aesgcm")
+	request.Header.Add("cryPTo-KEY", `dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"`)
+	request.Header.Add("EncRYPTION", `salt="lngarbyKfMoi9Z75xYXmkg"`)
+	handle(&gw)(s.Resp, request)
+
+	s.Equal(201, s.Resp.Result().StatusCode, "request should be valid")
+	s.Equal(`aesgcm
+Encryption: salt="lngarbyKfMoi9Z75xYXmkg"
+Crypto-Key: dh="BNoRDbb84JGm8g5Z5CFxurSqsXWJ11ItfXEWYVLE85Y7CYkDjXsIEc4aqxYaQ1G8BqkXCJ6DPpDrWtdWj_mugHU"
+this is
+
+my msg`, string(s.CallBody), "body should match")
 }
 
 func (s *RewriteTests) TestHealth() {
