@@ -11,7 +11,7 @@ server {
 
 	listen 0.0.0.0:80;
 	listen [::1]:80 ;
-	
+
 	listen 0.0.0.0:443 ssl;
 	listen [::1]:443 ssl;
 
@@ -19,7 +19,7 @@ server {
 	server_name unifiedpushproxy.example.com;
 
 	# this sends traffic to common-proxies
-	location ~ ^/(FCM|UP|_matrix) {	
+	location ~ ^/(wpfcm|UP|_matrix) {
 		proxy_pass			http://127.0.0.1:5000;
 	}
 }
@@ -33,7 +33,7 @@ ServerName unifiedpushproxy.example.org
 # Send these 3 paths to common-proxies
 ProxyPass "/_matrix" http://127.0.0.1:5000/_matrix
 ProxyPass "/generic" http://127.0.0.1:5000/generic
-ProxyPass "/FCM" http://127.0.0.1:5000/FCM
+ProxyPass "/wpfcm" http://127.0.0.1:5000/wpfcm
 ```
 
 ### Caddy
@@ -42,7 +42,7 @@ This snippet can be placed in a Caddyfile.
 ```caddy
 unifiedpushproxy.example.org {
     @rewrite_proxy {
-        path /generic* /_matrix* /FCM*
+        path /generic* /_matrix* /wpfcm*
     }
     reverse_proxy @rewrite_proxy 127.0.0.1:5000
 }
@@ -60,7 +60,7 @@ Here is a toml example:
 [http.routers]
   [http.routers.commonproxies]
     entryPoints = ["websecure"]
-    rule = "Host(`unifiedpushproxy.example.org`) && PathPrefix(`/generic`, `/FCM`, `/_matrix`)"
+    rule = "Host(`unifiedpushproxy.example.org`) && PathPrefix(`/generic`, `/wpfcm`, `/_matrix`)"
     service = "commonproxies-service"
 
     [http.routers.commonproxies.tls]

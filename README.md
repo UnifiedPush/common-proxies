@@ -22,7 +22,7 @@ Common-Proxies handles paths like /FCM (Firebase). Only traffic for these paths 
 
 ### FCM
 
-This is meant to be hosted by the app developers or someone who has access to the Firebase settings for that project. The FCM key under `rewrite.fcm` in the config file is this secret key.
+This is meant to be hosted by app developers with application server that doesn't support VAPID (yet): Webpush messages can be directly send to FCM servers (without this proxy) if the request contains a VAPID authorization. This rewrite proxy adds a VAPID authorization to the requests before forwarding them to FCM servers.
 
 ## Gateway
 

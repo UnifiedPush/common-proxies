@@ -74,7 +74,7 @@ func gatewayHandler(h Gateway) HttpHandler {
 				url := req.URL
 
 				req.Header.Add("User-Agent", Config.GetUserAgent())
-				req.Header.Add("TTL", "86400") // Cache for a day max
+				req.Header.Add("TTL", "86400")                  // Cache for a day max
 				req.Header.Add("Content-encoding", "aes128gcm") // Fake encryption
 
 				thisClient := paranoidClient
@@ -244,8 +244,6 @@ func proxyHandler(h Proxy) HttpHandler {
 			respType = "method not allowed"
 		}
 		w.WriteHeader(code)
-		w.Header().Add("TTL", "86400") // Cache for a day max
-		w.Header().Add("Content-encoding", "aes128gcm") // Fake encryption
 		log.Println(r.Method, r.Host, r.URL.Path, r.RemoteAddr, nread, "bytes read;", r.UserAgent(), respType, code)
 
 		return

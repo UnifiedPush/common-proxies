@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"log"
@@ -13,9 +14,11 @@ import (
 
 	"codeberg.org/UnifiedPush/common-proxies/config"
 	. "codeberg.org/UnifiedPush/common-proxies/config"
+	"codeberg.org/UnifiedPush/common-proxies/vapid"
 )
 
 var configFile = flag.String("c", "config.toml", "path to toml file for config")
+var genVapidFlag = flag.Bool("vapid", false, "Generate a new VAPID private key and exit")
 
 // various translaters
 var handlers = []Handler{}
@@ -24,8 +27,23 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 }
 
+func genVapid() {
+	private, err := vapid.GenerateKey(rand.Reader)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	out, err := vapid.EncodePriv(*private)
+	fmt.Println(out)
+}
+
 func main() {
 	flag.Parse()
+
+	if *genVapidFlag {
+		genVapid()
+		return
+	}
+
 	err := ParseConf(*configFile)
 	if err != nil {
 		log.Fatalln(err)
@@ -35,19 +53,23 @@ func main() {
 
 	handlers = []Handler{
 		&Config.Rewrite.FCM,
+		&Config.Rewrite.WebPushFCM,
 		&Config.Gateway.Matrix,
 		&Config.Gateway.Generic,
 	}
 
 	myRouter := http.NewServeMux()
+	stopTickers := make(chan bool)
 
 	for _, i := range handlers {
+		i.Load()
 		if i.Path() != "" {
 			myRouter.HandleFunc(i.Path(), handle(i))
 			if config.Config.Verbose {
 				fmt.Println("Handling", i.Path())
 			}
 		}
+		handleTicker(i, stopTickers)
 	}
 
 	myRouter.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +104,7 @@ func main() {
 				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 				defer cancel()
 
+				stopTickers <- true
 				server.SetKeepAlivesEnabled(false)
 				if err := server.Shutdown(ctx); err != nil {
 					log.Fatalf("Could not gracefully shutdown the server: %v\n", err)
@@ -113,5 +136,21 @@ func handle(handler Handler) HttpHandler {
 		//should be const so np abt fatal
 		log.Fatalf("UNABLE TO HANDLE HANDLER %#v\n", handler)
 		return nil
+	}
+}
+
+func handleTicker(handler Handler, done chan bool) {
+	if h, ok := handler.(TickerHandler); ok {
+		ticker := time.NewTicker(h.Duration())
+		go func() {
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					h.Tick()
+				}
+			}
+		}()
 	}
 }

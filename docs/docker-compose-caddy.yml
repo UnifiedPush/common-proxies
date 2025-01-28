@@ -19,7 +19,7 @@ services:
     image: "unifiedpush/common-proxies"
     labels:
       caddy: ${LISTEN_DOMAIN}
-      caddy.@match.path: /generic* /FCM* /_matrix*
+      caddy.@match.path: /generic* /wpfcm* /_matrix*
       caddy.reverse_proxy: "@match {{upstreams 5000}}"
     restart: unless-stopped
     environment:

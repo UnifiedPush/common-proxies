@@ -7,12 +7,17 @@ verbose = true
 	[gateway.matrix]
 		enabled = false
 [rewrite]
-	[rewrite.fcm]
+	[rewrite.webpushfcm]
 		enabled = false
-		# credentialsPath = "" # credentials json path for any hostname
-		[rewrite.fcm.CredentialsPaths] # keys for specific hostnames
-			#"your.fcm.hostname.example.org" = "/path/to/your-service-account-file.json"
-			#"other.fcm.hostname.example.org" = "/path/to/other-service-account-file.json"
+		# credentialsPath = "./vapid.key # path to the file containing VAPID private key
+
+	# rewrite.fcm is deprecated. Please use webpushfcm instead.
+	# [rewrite.fcm] # This is deprecated !
+	#		enabled = false
+	#		# credentialsPath = "" # credentials json path for any hostname
+	#		[rewrite.fcm.CredentialsPaths] # keys for specific hostnames
+				#"your.fcm.hostname.example.org" = "/path/to/your-service-account-file.json"
+				#"other.fcm.hostname.example.org" = "/path/to/other-service-account-file.json"
 
 
 # see https://codeberg.org/UnifiedPush/common-proxies/src/branch/main/docs/config.md for more info

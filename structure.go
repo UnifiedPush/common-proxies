@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"codeberg.org/UnifiedPush/common-proxies/utils"
 )
@@ -21,7 +22,14 @@ type Proxy interface {
 	Req([]byte, http.Request) ([]*http.Request, error)
 }
 
+type TickerHandler interface {
+	Handler
+	Duration() time.Duration
+	Tick()
+}
+
 type Handler interface {
+	Load() (err error)
 	Path() string
 	Defaults() (failed bool)
 }

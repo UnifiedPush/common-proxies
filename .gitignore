@@ -1,5 +1,7 @@
 config.toml
 up-rewrite
+common-proxies
+*.key
 # Binaries for programs and plugins
 *.exe
 *.exe~

@@ -13,6 +13,11 @@ type Matrix struct {
 	Enabled bool `env:"UP_GATEWAY_MATRIX_ENABLE"`
 }
 
+func (m Matrix) Load() (err error) {
+	// Nothing to do
+	return
+}
+
 func (m Matrix) Path() string {
 	if m.Enabled {
 		return "/_matrix/push/v1/notify"

@@ -1,5 +1,9 @@
 package rewrite
 
+/**
+/!\ Important: this way to send FCM messages are deprecated, please use wp_fcm instead.
+*/
+
 import (
 	"context"
 	"encoding/base64"
@@ -61,6 +65,17 @@ func googleConfigFactory(credentialsPath string) (config *FCMConfig, error error
 	}
 	googleConfigs[credentialsPath] = source
 	return &source, nil
+}
+
+func (f FCM) Load() (err error) {
+	// TODO: load config once
+	log.Println(`
+
+			!! This way to send FCM messages is deprecated !!
+			Please use wp_fcm instead.
+
+		`)
+	return
 }
 
 func (f FCM) Path() string {
@@ -178,7 +193,7 @@ func (f FCM) RespCode(resp *http.Response) *utils.ProxyError {
 			// Not even to extract err from body
 			return utils.NewProxyErrS(500, "Error with common-proxies auth or json, not app server, this should not be happening")
 		}
-		return utils.NewProxyErrS(resp.StatusCode, "FCM error: "+out.Message)
+		return utils.NewProxyErrS(resp.StatusCode, "FCM error: %s", out.Message)
 	case 5: // 5xx
 		//TODO implement forced exponential backoff in common-proxies
 		return utils.NewProxyErrS(429, "slow down")

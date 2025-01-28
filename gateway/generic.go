@@ -22,6 +22,11 @@ type Generic struct {
 	path    string
 }
 
+func (m Generic) Load() (err error) {
+	// Nothing to do
+	return
+}
+
 func (m Generic) Path() string {
 	if m.Enabled {
 		return m.path
