@@ -6,6 +6,8 @@ verbose = true
 	# AllowedHosts = ["abc.localhost:8443", "abc.localhost:8080",	"myinternaldomain.local"] 
 	[gateway.matrix]
 		enabled = false
+	[gateway.aesgcm]
+	  enabled = false
 [rewrite]
 	[rewrite.webpushfcm]
 		enabled = false
